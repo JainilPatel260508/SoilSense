@@ -103,7 +103,6 @@ Handles non-linear relationships between variables (like how pH and Rainfall aff
 
 - **Live Demo Link**: [To be added]
 - **Demo Video Link**: [To be added]
-- **GitHub Repository**: [To be added]
 
 ## 11. Impact
 AgriSense transforms farming from a reactive task to a proactive, data-driven science. By accurately interpreting soil health, it prevents soil degradation, optimizes resource application (fertilizers/water), and ultimately improves sustainable crop yields.
