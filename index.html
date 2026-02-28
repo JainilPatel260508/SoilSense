@@ -22,7 +22,6 @@
             <nav>
                 <ul>
                     <li class="active"><a href="#">Dashboard</a></li>
-                    <li><a href="#">Sensor Data Stream</a></li>
                     <li><a href="#">Analytics</a></li>
                     <li><a href="#">Settings</a></li>
                 </ul>
@@ -42,11 +41,6 @@
                         </label>
                         <span class="toggle-label active" id="expertLabel">Expert View</span>
                     </div>
-                </div>
-                <!-- Replaced Upload Button with Live Feed Indicator -->
-                <div class="live-indicator">
-                    <span class="pulsing-dot"></span>
-                    <span id="sensorStatusText">Live Sensor Feed: Active</span>
                 </div>
             </header>
 
@@ -93,6 +87,11 @@
                         <span class="status healthy">Optimal</span>
                     </div>
                     <div class="card">
+                        <h3>Potassium (K)</h3>
+                        <p class="value" id="val-k">35 <span class="unit">mg/kg</span></p>
+                        <span class="status healthy">Good</span>
+                    </div>
+                    <div class="card">
                         <h3>Soil pH</h3>
                         <p class="value" id="val-ph">6.5</p>
                         <span class="status warning">Slightly Acidic</span>
@@ -106,14 +105,32 @@
 
                 <!-- Data Visualization and AI Recommendations -->
                 <section class="insights">
-                    <div class="charts-wrapper">
-                        <div class="chart-container card" style="margin-bottom: 1.5rem;">
-                            <h3>Nutrient Trends (Last 7 Days)</h3>
-                            <canvas id="soilChart"></canvas>
+                    <div class="charts-wrapper"
+                        style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem;">
+                        <!-- Comprehensive NPK Graph -->
+                        <div class="chart-container card" style="height: 350px;">
+                            <h3>Nutrient Trends (N, P, K)</h3>
+                            <canvas id="npkChart"></canvas>
                         </div>
-                        <div class="chart-container card">
-                            <h3>Climate & Rainfall Trends (Last 7 Days)</h3>
-                            <canvas id="climateChart"></canvas>
+
+                        <!-- Climate and Soil Property Grid -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <div class="chart-container card" style="height: 350px;">
+                                <h3>Rainfall (mm)</h3>
+                                <canvas id="rainfallChart"></canvas>
+                            </div>
+                            <div class="chart-container card" style="height: 350px;">
+                                <h3>Soil pH</h3>
+                                <canvas id="phChart"></canvas>
+                            </div>
+                            <div class="chart-container card" style="height: 350px;">
+                                <h3>Humidity (%)</h3>
+                                <canvas id="humidityChart"></canvas>
+                            </div>
+                            <div class="chart-container card" style="height: 350px;">
+                                <h3>Temperature (°C)</h3>
+                                <canvas id="temperatureChart"></canvas>
+                            </div>
                         </div>
                     </div>
 

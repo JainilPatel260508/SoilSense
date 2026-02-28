@@ -178,46 +178,6 @@ input:checked+.slider:before {
     border-radius: 50%;
 }
 
-/* Live Sensor Indicator */
-.live-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(30, 35, 40, 0.5);
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    border: 1px solid rgba(46, 160, 67, 0.3);
-    color: var(--accent-hover);
-    font-weight: 600;
-    font-size: 0.9rem;
-}
-
-.pulsing-dot {
-    width: 10px;
-    height: 10px;
-    background-color: var(--accent-hover);
-    border-radius: 50%;
-    box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.7);
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.7);
-    }
-
-    70% {
-        transform: scale(1);
-        box-shadow: 0 0 0 10px rgba(63, 185, 80, 0);
-    }
-
-    100% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(63, 185, 80, 0);
-    }
-}
-
 /* Summary Cards */
 .card {
     background-color: var(--card-bg);
