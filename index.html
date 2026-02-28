@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
     <!-- Chart.js for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
     <div class="dashboard-container">
         <!-- Sidebar Navigation -->
@@ -60,11 +62,17 @@
 
             <!-- Data Visualization and AI Recommendations -->
             <section class="insights">
-                <div class="chart-container card">
-                    <h3>Nutrient Trends (Last 7 Days)</h3>
-                    <canvas id="soilChart"></canvas>
+                <div class="charts-wrapper">
+                    <div class="chart-container card" style="margin-bottom: 1.5rem;">
+                        <h3>Nutrient Trends (Last 7 Days)</h3>
+                        <canvas id="soilChart"></canvas>
+                    </div>
+                    <div class="chart-container card">
+                        <h3>Climate & Rainfall Trends (Last 7 Days)</h3>
+                        <canvas id="climateChart"></canvas>
+                    </div>
                 </div>
-                
+
                 <div class="recommendation-container card gradient-card">
                     <h3>🤖 ML Recommendation</h3>
                     <div class="recommendation-content">
@@ -84,4 +92,5 @@
     <!-- Main Application Logic -->
     <script src="app.js"></script>
 </body>
+
 </html>

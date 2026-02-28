@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Chart.js for data visualization
     const ctx = document.getElementById('soilChart').getContext('2d');
-    
+
     // Mock Data for NPK (Nitrogen, Phosphorus, Potassium) Trends
     const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const nitrogenData = [95, 98, 100, 102, 105, 104, 105];
@@ -87,5 +87,96 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploadBtn = document.getElementById('uploadBtn');
     uploadBtn.addEventListener('click', () => {
         alert('File upload dialog goes here! Later, this will send CSV data to our Python backend.');
+    });
+
+    // 3. Initialize Climate Chart (Temp, Humidity, Rainfall)
+    const climateCtx = document.getElementById('climateChart').getContext('2d');
+
+    // Mock Data for Climate
+    const temperatureData = [22, 24, 23, 25, 26, 25, 24]; // Celsius
+    const humidityData = [60, 58, 62, 59, 55, 57, 60]; // Percentage
+    const rainfallData = [5, 0, 12, 2, 0, 0, 8]; // mm
+
+    new Chart(climateCtx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Temperature (°C)',
+                    data: temperatureData,
+                    borderColor: '#ff7b72', // Red/Orange
+                    backgroundColor: 'rgba(255, 123, 114, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    yAxisID: 'y' // Left axis
+                },
+                {
+                    label: 'Humidity (%)',
+                    data: humidityData,
+                    borderColor: '#79c0ff', // Light Blue
+                    backgroundColor: 'rgba(121, 192, 255, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    yAxisID: 'y' // Left axis
+                },
+                {
+                    type: 'bar',
+                    label: 'Rainfall (mm)',
+                    data: rainfallData,
+                    backgroundColor: 'rgba(31, 111, 235, 0.6)', // Solid Blue
+                    borderColor: '#1f6feb',
+                    borderWidth: 1,
+                    yAxisID: 'y1' // Right axis for different units
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: '#8b949e', font: { family: 'Inter', size: 12 } }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(22, 27, 34, 0.9)',
+                    titleColor: '#e6edf3',
+                    bodyColor: '#e6edf3',
+                    borderColor: '#30363d',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(48, 54, 61, 0.5)' },
+                    ticks: { color: '#8b949e' }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    grid: { color: 'rgba(48, 54, 61, 0.5)' },
+                    ticks: { color: '#8b949e' },
+                    title: { display: true, text: 'Temp (°C) / Humidity (%)', color: '#8b949e' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { drawOnChartArea: false }, // only want the grid lines for one axis to show up
+                    ticks: { color: '#8b949e' },
+                    title: { display: true, text: 'Rainfall (mm)', color: '#8b949e' },
+                    beginAtZero: true
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
     });
 });
