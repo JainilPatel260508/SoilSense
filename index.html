@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoilSense - Agricultural Intelligence Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts for modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>🌱 SoilSense</h2>
+            </div>
+            <nav>
+                <ul>
+                    <li class="active"><a href="#">Dashboard</a></li>
+                    <li><a href="#">Upload Data (CSV)</a></li>
+                    <li><a href="#">Analytics</a></li>
+                    <li><a href="#">Settings</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header>
+                <h1>Soil Health Overview</h1>
+                <button class="btn-primary" id="uploadBtn">+ Upload Sensor Logs</button>
+            </header>
+
+            <!-- Key Metric Cards -->
+            <section class="metrics">
+                <div class="card">
+                    <h3>Nitrogen (N)</h3>
+                    <p class="value" id="val-n">105 <span class="unit">mg/kg</span></p>
+                    <span class="status healthy">Optimal</span>
+                </div>
+                <div class="card">
+                    <h3>Phosphorus (P)</h3>
+                    <p class="value" id="val-p">45 <span class="unit">mg/kg</span></p>
+                    <span class="status healthy">Optimal</span>
+                </div>
+                <div class="card">
+                    <h3>Soil pH</h3>
+                    <p class="value" id="val-ph">6.5</p>
+                    <span class="status warning">Slightly Acidic</span>
+                </div>
+                <div class="card">
+                    <h3>Moisture</h3>
+                    <p class="value" id="val-moisture">42 <span class="unit">%</span></p>
+                    <span class="status healthy">Good</span>
+                </div>
+            </section>
+
+            <!-- Data Visualization and AI Recommendations -->
+            <section class="insights">
+                <div class="chart-container card">
+                    <h3>Nutrient Trends (Last 7 Days)</h3>
+                    <canvas id="soilChart"></canvas>
+                </div>
+                
+                <div class="recommendation-container card gradient-card">
+                    <h3>🤖 ML Recommendation</h3>
+                    <div class="recommendation-content">
+                        <p>Based on current soil parameters and RandomForest prediction, the optimal crop is:</p>
+                        <h2 class="crop-name">Wheat</h2>
+                        <ul class="reasoning">
+                            <li>✓ Perfect pH range (6.0 - 7.0)</li>
+                            <li>✓ Adequate Nitrogen levels</li>
+                            <li>✓ Favorable Temperature constraints</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Main Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
