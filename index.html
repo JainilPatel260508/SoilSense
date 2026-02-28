@@ -22,7 +22,7 @@
             <nav>
                 <ul>
                     <li class="active"><a href="#">Dashboard</a></li>
-                    <li><a href="#">Upload Data (CSV)</a></li>
+                    <li><a href="#">Sensor Data Stream</a></li>
                     <li><a href="#">Analytics</a></li>
                     <li><a href="#">Settings</a></li>
                 </ul>
@@ -43,7 +43,11 @@
                         <span class="toggle-label active" id="expertLabel">Expert View</span>
                     </div>
                 </div>
-                <button class="btn-primary" id="uploadBtn">+ Upload Sensor Logs</button>
+                <!-- Replaced Upload Button with Live Feed Indicator -->
+                <div class="live-indicator">
+                    <span class="pulsing-dot"></span>
+                    <span id="sensorStatusText">Live Sensor Feed: Active</span>
+                </div>
             </header>
 
             <!-- Farmer View (Simple Alerts) -->

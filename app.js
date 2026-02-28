@@ -83,11 +83,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 2. Upload button interaction (Simulation)
-    const uploadBtn = document.getElementById('uploadBtn');
-    uploadBtn.addEventListener('click', () => {
-        alert('File upload dialog goes here! Later, this will send CSV data to our Python backend.');
-    });
+    // 2. Automated Sensor Polling Mock
+    const statusText = document.getElementById('sensorStatusText');
+    let lastUpdateMsg = '';
+
+    setInterval(() => {
+        // Here we simulate fetching from your upcoming Python backend API (e.g., /api/sensor-data)
+        // For right now, it just flashes a fetching state.
+        statusText.style.opacity = 0.5;
+        setTimeout(() => {
+            statusText.style.opacity = 1;
+            // Update the string to show it's pulling fresh data
+            const now = new Date();
+            statusText.innerHTML = `Live Sensor Feed: Synced at ${now.getHours()}:${now.getMinutes()}:${now.getSeconds().toString().padStart(2, '0')}`;
+        }, 500);
+    }, 5000); // Polls every 5 seconds
 
     // 3. Initialize Climate Chart (Temp, Humidity, Rainfall)
     const climateCtx = document.getElementById('climateChart').getContext('2d');
