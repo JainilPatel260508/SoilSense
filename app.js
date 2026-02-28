@@ -179,4 +179,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // 4. View Toggle Logic (Farmer vs Expert)
+    const viewToggle = document.getElementById('viewToggle');
+    const farmerView = document.getElementById('farmerView');
+    const expertView = document.getElementById('expertView');
+    const farmerLabel = document.getElementById('farmerLabel');
+    const expertLabel = document.getElementById('expertLabel');
+
+    viewToggle.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            // Expert View (Checked)
+            expertView.style.display = 'block';
+            farmerView.style.display = 'none';
+            expertLabel.classList.add('active');
+            farmerLabel.classList.remove('active');
+        } else {
+            // Farmer View (Unchecked)
+            expertView.style.display = 'none';
+            farmerView.style.display = 'flex'; // Uses flex for the alert layout
+            farmerLabel.classList.add('active');
+            expertLabel.classList.remove('active');
+        }
+    });
 });

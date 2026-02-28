@@ -32,60 +32,101 @@
         <!-- Main Content Area -->
         <main class="main-content">
             <header>
-                <h1>Soil Health Overview</h1>
+                <div class="header-left">
+                    <h1>Soil Health Overview</h1>
+                    <div class="view-toggle">
+                        <span class="toggle-label" id="farmerLabel">Farmer View</span>
+                        <label class="switch">
+                            <input type="checkbox" id="viewToggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label active" id="expertLabel">Expert View</span>
+                    </div>
+                </div>
                 <button class="btn-primary" id="uploadBtn">+ Upload Sensor Logs</button>
             </header>
 
-            <!-- Key Metric Cards -->
-            <section class="metrics">
-                <div class="card">
-                    <h3>Nitrogen (N)</h3>
-                    <p class="value" id="val-n">105 <span class="unit">mg/kg</span></p>
-                    <span class="status healthy">Optimal</span>
-                </div>
-                <div class="card">
-                    <h3>Phosphorus (P)</h3>
-                    <p class="value" id="val-p">45 <span class="unit">mg/kg</span></p>
-                    <span class="status healthy">Optimal</span>
-                </div>
-                <div class="card">
-                    <h3>Soil pH</h3>
-                    <p class="value" id="val-ph">6.5</p>
-                    <span class="status warning">Slightly Acidic</span>
-                </div>
-                <div class="card">
-                    <h3>Moisture</h3>
-                    <p class="value" id="val-moisture">42 <span class="unit">%</span></p>
-                    <span class="status healthy">Good</span>
-                </div>
-            </section>
-
-            <!-- Data Visualization and AI Recommendations -->
-            <section class="insights">
-                <div class="charts-wrapper">
-                    <div class="chart-container card" style="margin-bottom: 1.5rem;">
-                        <h3>Nutrient Trends (Last 7 Days)</h3>
-                        <canvas id="soilChart"></canvas>
-                    </div>
-                    <div class="chart-container card">
-                        <h3>Climate & Rainfall Trends (Last 7 Days)</h3>
-                        <canvas id="climateChart"></canvas>
+            <!-- Farmer View (Simple Alerts) -->
+            <section id="farmerView" class="farmer-view" style="display: none;">
+                <div class="alert-card critical">
+                    <div class="alert-icon">⚠️</div>
+                    <div class="alert-content">
+                        <h3>Action Required: Low Nitrogen</h3>
+                        <p>Nitrogen levels are dropping below the healthy limit. <strong>Recommendation:</strong> Apply
+                            a nitrogen-rich fertilizer within the next 3 days to avoid impacting your wheat crop.</p>
                     </div>
                 </div>
-
-                <div class="recommendation-container card gradient-card">
-                    <h3>🤖 ML Recommendation</h3>
-                    <div class="recommendation-content">
-                        <p>Based on current soil parameters and RandomForest prediction, the optimal crop is:</p>
-                        <h2 class="crop-name">Wheat</h2>
-                        <ul class="reasoning">
-                            <li>✓ Perfect pH range (6.0 - 7.0)</li>
-                            <li>✓ Adequate Nitrogen levels</li>
-                            <li>✓ Favorable Temperature constraints</li>
-                        </ul>
+                <div class="alert-card warning">
+                    <div class="alert-icon">💧</div>
+                    <div class="alert-content">
+                        <h3>Monitor: Soil Moisture</h3>
+                        <p>The soil is getting a bit dry (42%). <strong>Recommendation:</strong> Plan for a light
+                            irrigation cycle tomorrow morning if there is no rain.</p>
+                    </div>
+                </div>
+                <div class="alert-card success">
+                    <div class="alert-icon">✅</div>
+                    <div class="alert-content">
+                        <h3>All Good: pH & Phosphorus</h3>
+                        <p>Your soil pH and Phosphorus are perfectly balanced for your current crops. No action needed
+                            here!</p>
                     </div>
                 </div>
             </section>
+
+            <!-- Expert View (Detailed Metrics & Charts) -->
+            <div id="expertView" class="expert-view">
+                <!-- Key Metric Cards -->
+                <section class="metrics">
+                    <div class="card">
+                        <h3>Nitrogen (N)</h3>
+                        <p class="value" id="val-n">105 <span class="unit">mg/kg</span></p>
+                        <span class="status healthy">Optimal</span>
+                    </div>
+                    <div class="card">
+                        <h3>Phosphorus (P)</h3>
+                        <p class="value" id="val-p">45 <span class="unit">mg/kg</span></p>
+                        <span class="status healthy">Optimal</span>
+                    </div>
+                    <div class="card">
+                        <h3>Soil pH</h3>
+                        <p class="value" id="val-ph">6.5</p>
+                        <span class="status warning">Slightly Acidic</span>
+                    </div>
+                    <div class="card">
+                        <h3>Moisture</h3>
+                        <p class="value" id="val-moisture">42 <span class="unit">%</span></p>
+                        <span class="status healthy">Good</span>
+                    </div>
+                </section>
+
+                <!-- Data Visualization and AI Recommendations -->
+                <section class="insights">
+                    <div class="charts-wrapper">
+                        <div class="chart-container card" style="margin-bottom: 1.5rem;">
+                            <h3>Nutrient Trends (Last 7 Days)</h3>
+                            <canvas id="soilChart"></canvas>
+                        </div>
+                        <div class="chart-container card">
+                            <h3>Climate & Rainfall Trends (Last 7 Days)</h3>
+                            <canvas id="climateChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-container card gradient-card">
+                        <h3>🤖 ML Recommendation</h3>
+                        <div class="recommendation-content">
+                            <p>Based on current soil parameters and RandomForest prediction, the optimal crop is:</p>
+                            <h2 class="crop-name">Wheat</h2>
+                            <ul class="reasoning">
+                                <li>✓ Perfect pH range (6.0 - 7.0)</li>
+                                <li>✓ Adequate Nitrogen levels</li>
+                                <li>✓ Favorable Temperature constraints</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </div> <!-- End Expert View -->
         </main>
     </div>
 
