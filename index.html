@@ -4,12 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoilSense - Agricultural Intelligence Dashboard</title>
+    <title>SoilSense - Agricultural Intelligence</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Google Fonts for modern typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js for data visualization -->
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
@@ -17,13 +18,13 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="logo">
-                <h2>🌱 SoilSense</h2>
+                <h2><i class="fa-solid fa-leaf" style="color: #4ade80; margin-right: 8px;"></i>SoilSense</h2>
             </div>
             <nav>
                 <ul>
-                    <li class="active"><a href="#">Dashboard</a></li>
-                    <li><a href="#">Analytics</a></li>
-                    <li><a href="#">Settings</a></li>
+                    <li class="active"><a href="#"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+                    <li><a href="#"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
+                    <li><a href="#"><i class="fa-solid fa-gear"></i> Settings</a></li>
                 </ul>
             </nav>
         </aside>
@@ -32,9 +33,12 @@
         <main class="main-content">
             <header>
                 <div class="header-left">
-                    <h1>Soil Health Overview</h1>
+                    <h1>Soil Health Intelligence</h1>
+                    <p class="subtitle">Time-Series Prediction & Analysis</p>
+                </div>
+                <div class="header-right">
                     <div class="view-toggle">
-                        <span class="toggle-label" id="farmerLabel">Farmer View</span>
+                        <span class="toggle-label" id="farmerLabel">Focus View</span>
                         <label class="switch">
                             <input type="checkbox" id="viewToggle" checked>
                             <span class="slider round"></span>
@@ -44,110 +48,147 @@
                 </div>
             </header>
 
-            <!-- Farmer View (Simple Alerts) -->
-            <section id="farmerView" class="farmer-view" style="display: none;">
-                <div class="alert-card critical">
-                    <div class="alert-icon">⚠️</div>
-                    <div class="alert-content">
-                        <h3>Action Required: Low Nitrogen</h3>
-                        <p>Nitrogen levels are dropping below the healthy limit. <strong>Recommendation:</strong> Apply
-                            a nitrogen-rich fertilizer within the next 3 days to avoid impacting your wheat crop.</p>
-                    </div>
+            <!-- Data Ingestion Section -->
+            <section class="upload-section card glass-card">
+                <div class="upload-header">
+                    <h3><i class="fa-solid fa-cloud-arrow-up"></i> Ingest Sensor Logs (CSV)</h3>
+                    <p>Upload your time-series sensor data to generate new insights and planting recommendations.</p>
                 </div>
-                <div class="alert-card warning">
-                    <div class="alert-icon">💧</div>
-                    <div class="alert-content">
-                        <h3>Monitor: Soil Moisture</h3>
-                        <p>The soil is getting a bit dry (42%). <strong>Recommendation:</strong> Plan for a light
-                            irrigation cycle tomorrow morning if there is no rain.</p>
+                <div class="upload-area" id="drop-zone">
+                    <input type="file" id="csv-file-input" accept=".csv" hidden>
+                    <div class="upload-prompt" id="upload-prompt">
+                        <i class="fa-solid fa-file-csv fa-3x" style="color: rgba(255,255,255,0.4); margin-bottom: 1rem;"></i>
+                        <h4>Drag and drop your .csv file here</h4>
+                        <p style="margin: 0.5rem 0;">or</p>
+                        <button class="btn btn-primary" id="browse-btn"><i class="fa-solid fa-folder-open"></i> Browse Files</button>
                     </div>
-                </div>
-                <div class="alert-card success">
-                    <div class="alert-icon">✅</div>
-                    <div class="alert-content">
-                        <h3>All Good: pH & Phosphorus</h3>
-                        <p>Your soil pH and Phosphorus are perfectly balanced for your current crops. No action needed
-                            here!</p>
+                    <div class="upload-status" id="upload-status" style="display: none;">
+                        <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #fff; margin-bottom: 1rem;"></i>
+                        <p id="upload-status-text">Analyzing Time-Series Data...</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Expert View (Detailed Metrics & Charts) -->
-            <div id="expertView" class="expert-view">
-                <!-- Key Metric Cards -->
-                <section class="metrics">
-                    <div class="card">
-                        <h3>Nitrogen (N)</h3>
-                        <p class="value" id="val-n">105 <span class="unit">mg/kg</span></p>
-                        <span class="status healthy">Optimal</span>
-                    </div>
-                    <div class="card">
-                        <h3>Phosphorus (P)</h3>
-                        <p class="value" id="val-p">45 <span class="unit">mg/kg</span></p>
-                        <span class="status healthy">Optimal</span>
-                    </div>
-                    <div class="card">
-                        <h3>Potassium (K)</h3>
-                        <p class="value" id="val-k">35 <span class="unit">mg/kg</span></p>
-                        <span class="status healthy">Good</span>
-                    </div>
-                    <div class="card">
-                        <h3>Soil pH</h3>
-                        <p class="value" id="val-ph">6.5</p>
-                        <span class="status warning">Slightly Acidic</span>
-                    </div>
-                    <div class="card">
-                        <h3>Moisture</h3>
-                        <p class="value" id="val-moisture">42 <span class="unit">%</span></p>
-                        <span class="status healthy">Good</span>
-                    </div>
+            <!-- Analysis Results (Hidden initially) -->
+            <div id="results-container" class="results-container" style="display: none;">
+                
+                <!-- Quick Alerts Section -->
+                <section id="alerts-container" class="alerts-container">
+                    <!-- Dynamic Alerts will be injected here -->
                 </section>
 
-                <!-- Data Visualization and AI Recommendations -->
-                <section class="insights">
-                    <div class="charts-wrapper"
-                        style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem;">
-                        <!-- Comprehensive NPK Graph -->
-                        <div class="chart-container card" style="height: 350px;">
-                            <h3>Nutrient Trends (N, P, K)</h3>
-                            <canvas id="npkChart"></canvas>
+                <!-- Detailed Metrics & Charts -->
+                <div id="expertView" class="expert-view">
+                    
+                    <!-- AI Intelligence Cards -->
+                    <div class="intelligence-grid">
+                        <div class="recommendation-container card ai-card">
+                            <div class="card-glow"></div>
+                            <div class="ai-header">
+                                <i class="fa-solid fa-brain"></i>
+                                <h3>Crop Recommendation</h3>
+                            </div>
+                            <div class="recommendation-content">
+                                <h2 class="crop-name highlight-text" id="rec-crop-name">--</h2>
+                                <p class="ai-desc">RandomForest prediction based on latest average parameters.</p>
+                            </div>
                         </div>
 
-                        <!-- Climate and Soil Property Grid -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                            <div class="chart-container card" style="height: 350px;">
-                                <h3>Rainfall (mm)</h3>
-                                <canvas id="rainfallChart"></canvas>
+                        <div class="recommendation-container card ai-card window-card">
+                            <div class="card-glow"></div>
+                            <div class="ai-header">
+                                <i class="fa-solid fa-calendar-check"></i>
+                                <h3>Planting Window</h3>
                             </div>
-                            <div class="chart-container card" style="height: 350px;">
-                                <h3>Soil pH</h3>
-                                <canvas id="phChart"></canvas>
+                            <div class="recommendation-content">
+                                <h4 class="window-text highlight-text" id="rec-planting-window" style="font-size: 1.2rem; line-height: 1.4;">--</h4>
+                                <p class="ai-desc">Derived from moisture and temperature micro-trends.</p>
                             </div>
-                            <div class="chart-container card" style="height: 350px;">
-                                <h3>Humidity (%)</h3>
-                                <canvas id="humidityChart"></canvas>
+                        </div>
+
+                        <div class="recommendation-container card ai-card score-card">
+                            <div class="card-glow" style="background: radial-gradient(circle at top right, rgba(0, 204, 150, 0.2), transparent 70%);"></div>
+                            <div class="ai-header">
+                                <i class="fa-solid fa-seedling"></i>
+                                <h3>Yield Score</h3>
                             </div>
-                            <div class="chart-container card" style="height: 350px;">
-                                <h3>Temperature (°C)</h3>
-                                <canvas id="temperatureChart"></canvas>
+                            <div class="recommendation-content yield-score-wrapper" style="display: flex; align-items: center; gap: 1rem;">
+                                <div class="score-circle">
+                                    <h2 class="highlight-text" id="rec-yield-score" style="margin: 0;">0</h2>
+                                </div>
+                                <p class="ai-desc" style="margin: 0; text-align: left; max-width: 150px;">Historical correlation to ideal conditions.</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="recommendation-container card gradient-card">
-                        <h3>🤖 ML Recommendation</h3>
-                        <div class="recommendation-content">
-                            <p>Based on current soil parameters and RandomForest prediction, the optimal crop is:</p>
-                            <h2 class="crop-name">Wheat</h2>
-                            <ul class="reasoning">
-                                <li>✓ Perfect pH range (6.0 - 7.0)</li>
-                                <li>✓ Adequate Nitrogen levels</li>
-                                <li>✓ Favorable Temperature constraints</li>
-                            </ul>
+                    <!-- Trend Indicators -->
+                    <section class="metrics" style="margin-top: 2rem; display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;">
+                        <div class="card metric-card">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Average N</h3>
+                            <div class="metric-value-row">
+                                <p class="value" id="val-n">--</p>
+                                <span class="trend-icon" id="trend-n"><i class="fa-solid fa-minus"></i></span>
+                            </div>
                         </div>
-                    </div>
-                </section>
-            </div> <!-- End Expert View -->
+                        <div class="card metric-card">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Average P</h3>
+                            <p class="value" id="val-p">--</p>
+                        </div>
+                        <div class="card metric-card">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Average K</h3>
+                            <p class="value" id="val-k">--</p>
+                        </div>
+                        <div class="card metric-card">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Avg Temp</h3>
+                            <div class="metric-value-row">
+                                <p class="value" id="val-temp">-- <span class="unit" style="font-size: 0.6em;">°C</span></p>
+                                <span class="trend-icon" id="trend-temp"><i class="fa-solid fa-minus"></i></span>
+                            </div>
+                        </div>
+                         <div class="card metric-card">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Avg Moisture</h3>
+                            <div class="metric-value-row">
+                                <p class="value" id="val-moisture">-- <span class="unit" style="font-size: 0.6em;">%</span></p>
+                                <span class="trend-icon" id="trend-moisture"><i class="fa-solid fa-minus"></i></span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Data Visualization -->
+                    <section class="insights">
+                        <div class="charts-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem; margin-top: 1.5rem;">
+                            <!-- Comprehensive NPK Graph -->
+                            <div class="chart-container card" style="height: 380px;">
+                                <div class="chart-header" style="margin-bottom: 1rem;">
+                                    <h3 style="margin: 0;"><i class="fa-solid fa-chart-area" style="margin-right: 8px;"></i> Historical Nutrient Trends (N, P, K)</h3>
+                                </div>
+                                <div class="canvas-wrapper" style="position: relative; height: 320px; width: 100%;">
+                                    <canvas id="npkChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Climate Grid -->
+                            <div class="climate-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                                <div class="chart-container card" style="height: 320px;">
+                                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-cloud-sun-rain" style="margin-right: 8px;"></i> Climate: Temp & Rainfall</h3>
+                                    <div class="canvas-wrapper" style="position: relative; height: 260px; width: 100%;"><canvas id="climateChart"></canvas></div>
+                                </div>
+                                <div class="chart-container card" style="height: 320px;">
+                                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-flask" style="margin-right: 8px;"></i> Soil: pH & Humidity</h3>
+                                    <div class="canvas-wrapper" style="position: relative; height: 260px; width: 100%;"><canvas id="soilParamChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div> <!-- End Expert View -->
+            </div>
+            
+            <div id="empty-state" class="empty-state card" style="text-align: center; padding: 4rem 2rem; margin-top: 2rem; border: 1px dashed rgba(255,255,255,0.2);">
+                <i class="fa-solid fa-chart-line fa-4x" style="color: rgba(255,255,255,0.1); margin-bottom: 1.5rem;"></i>
+                <h3 style="color: #8b949e;">Awaiting Sensor Logs</h3>
+                <p style="color: #8b949e; max-width: 400px; margin: 0 auto;">Upload a CSV file containing time-series data to generate multi-dimensional insights and AI recommendations.</p>
+            </div>
+            
         </main>
     </div>
 
