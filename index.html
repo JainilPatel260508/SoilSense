@@ -7,7 +7,9 @@
     <title>SoilSense - Agricultural Intelligence</title>
     <link rel="stylesheet" href="style.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -23,8 +25,8 @@
             <nav>
                 <ul>
                     <li class="active"><a href="#"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
-                    <li><a href="#"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
-                    <li><a href="#"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                    <!-- <li><a href="#"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
+                    <li><a href="#"><i class="fa-solid fa-gear"></i> Settings</a></li> -->
                 </ul>
             </nav>
         </aside>
@@ -53,14 +55,27 @@
                 <div class="upload-header">
                     <h3><i class="fa-solid fa-cloud-arrow-up"></i> Ingest Sensor Logs (CSV)</h3>
                     <p>Upload your time-series sensor data to generate new insights and planting recommendations.</p>
+                    <div id="upload-sow-option" class="sow-option" style="margin-top: 1rem;">
+                        <span class="option-label">Your situation</span>
+                        <div class="pill-group" role="group" aria-label="Sow status">
+                            <input type="radio" name="sowStatus" id="sowStatus-sow" value="sow" checked hidden>
+                            <label for="sowStatus-sow" class="pill pill-left"><i class="fa-solid fa-seedling"></i> I
+                                need to sow</label>
+                            <input type="radio" name="sowStatus" id="sowStatus-already" value="already" hidden>
+                            <label for="sowStatus-already" class="pill pill-right"><i class="fa-solid fa-leaf"></i>
+                                Already sown</label>
+                        </div>
+                    </div>
                 </div>
                 <div class="upload-area" id="drop-zone">
                     <input type="file" id="csv-file-input" accept=".csv" hidden>
                     <div class="upload-prompt" id="upload-prompt">
-                        <i class="fa-solid fa-file-csv fa-3x" style="color: rgba(255,255,255,0.4); margin-bottom: 1rem;"></i>
+                        <i class="fa-solid fa-file-csv fa-3x"
+                            style="color: rgba(255,255,255,0.4); margin-bottom: 1rem;"></i>
                         <h4>Drag and drop your .csv file here</h4>
                         <p style="margin: 0.5rem 0;">or</p>
-                        <button class="btn btn-primary" id="browse-btn"><i class="fa-solid fa-folder-open"></i> Browse Files</button>
+                        <button class="btn btn-primary" id="browse-btn"><i class="fa-solid fa-folder-open"></i> Browse
+                            Files</button>
                     </div>
                     <div class="upload-status" id="upload-status" style="display: none;">
                         <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #fff; margin-bottom: 1rem;"></i>
@@ -71,7 +86,60 @@
 
             <!-- Analysis Results (Hidden initially) -->
             <div id="results-container" class="results-container" style="display: none;">
-                
+                <!-- Editable choices bar: collapsed after selection, "Change" to expand -->
+                <div class="choice-bar card">
+                    <div id="choice-bar-collapsed" class="choice-bar-collapsed" style="display: none;">
+                        <span class="choice-bar-summary" id="choice-bar-summary">Viewing as: Sow seeds</span>
+                        <button type="button" class="btn-change-choice" id="btn-change-choice"><i
+                                class="fa-solid fa-pen-to-square"></i> Change</button>
+                    </div>
+                    <div id="choice-bar-expanded" class="choice-bar-groups">
+                        <span class="choice-bar-label"><i class="fa-solid fa-sliders"></i> Your choices</span>
+                        <div class="pill-group" role="group" aria-label="Situation">
+                            <input type="radio" name="sowStatusResults" id="sowStatusResults-sow" value="sow" hidden>
+                            <label for="sowStatusResults-sow" class="pill pill-left">Sow seeds</label>
+                            <input type="radio" name="sowStatusResults" id="sowStatusResults-already" value="already"
+                                hidden>
+                            <label for="sowStatusResults-already" class="pill pill-right">Already sown</label>
+                        </div>
+                        <div id="show-me-group" class="pill-group pill-group-view" role="group" aria-label="View"
+                            style="display: none;">
+                            <input type="radio" name="sowChoice" id="sowChoice-own" value="own" checked hidden>
+                            <label for="sowChoice-own" class="pill pill-left">Full overview</label>
+                            <input type="radio" name="sowChoice" id="sowChoice-rec" value="recommendation" hidden>
+                            <label for="sowChoice-rec" class="pill pill-mid">Recommendation</label>
+                            <input type="radio" name="sowChoice" id="sowChoice-specific" value="specific" hidden>
+                            <label for="sowChoice-specific" class="pill pill-right">I want to sow</label>
+                        </div>
+                        <button type="button" class="btn-apply-choice" id="btn-apply-choice"><i
+                                class="fa-solid fa-check"></i> Apply</button>
+                        <span class="choice-bar-hint">Choose above, then click Apply</span>
+                    </div>
+                </div>
+                <!-- Already sown: which crop + soil management -->
+                <div id="already-sown-block" class="already-sown-block" style="display: none;">
+                    <div class="already-sown-select card">
+                        <span class="already-sown-label"><i class="fa-solid fa-seedling"></i> Which crop did you
+                            sow?</span>
+                        <div class="custom-crop-dropdown" id="sown-crop-dropdown">
+                            <input type="hidden" id="sown-crop-select" name="sown-crop" value="">
+                            <button type="button" class="custom-crop-btn" id="sown-crop-btn" aria-haspopup="listbox"
+                                aria-expanded="false">— Select your crop —</button>
+                            <div class="custom-crop-list" id="sown-crop-list" role="listbox" aria-hidden="true"></div>
+                        </div>
+                    </div>
+                    <div id="already-sown-management-card" class="recommendation-container card ai-card soil-mgmt-card"
+                        style="display: none;">
+                        <div class="card-glow"
+                            style="background: radial-gradient(circle at top right, rgba(63, 185, 80, 0.2), transparent 70%);">
+                        </div>
+                        <div class="ai-header">
+                            <i class="fa-solid fa-hand-holding-droplet"></i>
+                            <h3>Soil management for your crop</h3>
+                        </div>
+                        <div class="recommendation-content" id="already-sown-management-content"></div>
+                    </div>
+                </div>
                 <!-- Quick Alerts Section -->
                 <section id="alerts-container" class="alerts-container">
                     <!-- Dynamic Alerts will be injected here -->
@@ -79,10 +147,10 @@
 
                 <!-- Detailed Metrics & Charts -->
                 <div id="expertView" class="expert-view">
-                    
+
                     <!-- AI Intelligence Cards -->
                     <div class="intelligence-grid">
-                        <div class="recommendation-container card ai-card">
+                        <div id="crop-rec-card" class="recommendation-container card ai-card">
                             <div class="card-glow"></div>
                             <div class="ai-header">
                                 <i class="fa-solid fa-brain"></i>
@@ -93,6 +161,43 @@
                                 <p class="ai-desc">RandomForest prediction based on latest average parameters.</p>
                             </div>
                         </div>
+                        <div id="crop-needs-card" class="recommendation-container card ai-card" style="display: none;">
+                            <div class="card-glow"
+                                style="background: radial-gradient(circle at top right, rgba(31, 111, 235, 0.2), transparent 70%);">
+                            </div>
+                            <div class="ai-header">
+                                <i class="fa-solid fa-list-check"></i>
+                                <h3>What this crop needs</h3>
+                            </div>
+                            <div class="recommendation-content" id="crop-needs-content">
+                                <p class="ai-desc">Ideal conditions and care for the recommended crop.</p>
+                            </div>
+                        </div>
+                        <!-- I want to sow [crop]: select crop + favourable conditions + current vs ideal -->
+                        <div id="sow-specific-block" class="sow-specific-block" style="display: none;">
+                            <div class="already-sown-select card">
+                                <span class="already-sown-label"><i class="fa-solid fa-seedling"></i> Which crop do you
+                                    want to sow?</span>
+                                <div class="custom-crop-dropdown" id="want-sow-crop-dropdown">
+                                    <input type="hidden" id="want-sow-crop-select" name="want-sow-crop" value="">
+                                    <button type="button" class="custom-crop-btn" id="want-sow-crop-btn"
+                                        aria-haspopup="listbox" aria-expanded="false">— Select crop —</button>
+                                    <div class="custom-crop-list" id="want-sow-crop-list" role="listbox"
+                                        aria-hidden="true"></div>
+                                </div>
+                            </div>
+                            <div id="sow-specific-readiness-card"
+                                class="recommendation-container card ai-card soil-mgmt-card" style="display: none;">
+                                <div class="card-glow"
+                                    style="background: radial-gradient(circle at top right, rgba(210, 153, 34, 0.2), transparent 70%);">
+                                </div>
+                                <div class="ai-header">
+                                    <i class="fa-solid fa-scale-balanced"></i>
+                                    <h3>Is your soil ready for this crop?</h3>
+                                </div>
+                                <div class="recommendation-content" id="sow-specific-readiness-content"></div>
+                            </div>
+                        </div>
 
                         <div class="recommendation-container card ai-card window-card">
                             <div class="card-glow"></div>
@@ -101,28 +206,34 @@
                                 <h3>Planting Window</h3>
                             </div>
                             <div class="recommendation-content">
-                                <h4 class="window-text highlight-text" id="rec-planting-window" style="font-size: 1.2rem; line-height: 1.4;">--</h4>
+                                <h4 class="window-text highlight-text" id="rec-planting-window"
+                                    style="font-size: 1.2rem; line-height: 1.4;">--</h4>
                                 <p class="ai-desc">Derived from moisture and temperature micro-trends.</p>
                             </div>
                         </div>
 
                         <div class="recommendation-container card ai-card score-card">
-                            <div class="card-glow" style="background: radial-gradient(circle at top right, rgba(0, 204, 150, 0.2), transparent 70%);"></div>
+                            <div class="card-glow"
+                                style="background: radial-gradient(circle at top right, rgba(0, 204, 150, 0.2), transparent 70%);">
+                            </div>
                             <div class="ai-header">
                                 <i class="fa-solid fa-seedling"></i>
                                 <h3>Yield Score</h3>
                             </div>
-                            <div class="recommendation-content yield-score-wrapper" style="display: flex; align-items: center; gap: 1rem;">
+                            <div class="recommendation-content yield-score-wrapper"
+                                style="display: flex; align-items: center; gap: 1rem;">
                                 <div class="score-circle">
                                     <h2 class="highlight-text" id="rec-yield-score" style="margin: 0;">0</h2>
                                 </div>
-                                <p class="ai-desc" style="margin: 0; text-align: left; max-width: 150px;">Historical correlation to ideal conditions.</p>
+                                <p class="ai-desc" style="margin: 0; text-align: left; max-width: 150px;">Historical
+                                    correlation to ideal conditions.</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Trend Indicators -->
-                    <section class="metrics" style="margin-top: 2rem; display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;">
+                    <section class="metrics"
+                        style="margin-top: 2rem; display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;">
                         <div class="card metric-card">
                             <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Average N</h3>
                             <div class="metric-value-row">
@@ -141,14 +252,16 @@
                         <div class="card metric-card">
                             <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Avg Temp</h3>
                             <div class="metric-value-row">
-                                <p class="value" id="val-temp">-- <span class="unit" style="font-size: 0.6em;">°C</span></p>
+                                <p class="value" id="val-temp">-- <span class="unit" style="font-size: 0.6em;">°C</span>
+                                </p>
                                 <span class="trend-icon" id="trend-temp"><i class="fa-solid fa-minus"></i></span>
                             </div>
                         </div>
-                         <div class="card metric-card">
+                        <div class="card metric-card">
                             <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Avg Moisture</h3>
                             <div class="metric-value-row">
-                                <p class="value" id="val-moisture">-- <span class="unit" style="font-size: 0.6em;">%</span></p>
+                                <p class="value" id="val-moisture">-- <span class="unit"
+                                        style="font-size: 0.6em;">%</span></p>
                                 <span class="trend-icon" id="trend-moisture"><i class="fa-solid fa-minus"></i></span>
                             </div>
                         </div>
@@ -156,11 +269,13 @@
 
                     <!-- Data Visualization -->
                     <section class="insights">
-                        <div class="charts-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem; margin-top: 1.5rem;">
+                        <div class="charts-wrapper"
+                            style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem; margin-top: 1.5rem;">
                             <!-- Comprehensive NPK Graph -->
                             <div class="chart-container card" style="height: 380px;">
                                 <div class="chart-header" style="margin-bottom: 1rem;">
-                                    <h3 style="margin: 0;"><i class="fa-solid fa-chart-area" style="margin-right: 8px;"></i> Historical Nutrient Trends (N, P, K)</h3>
+                                    <h3 style="margin: 0;"><i class="fa-solid fa-chart-area"
+                                            style="margin-right: 8px;"></i> Historical Nutrient Trends (N, P, K)</h3>
                                 </div>
                                 <div class="canvas-wrapper" style="position: relative; height: 320px; width: 100%;">
                                     <canvas id="npkChart"></canvas>
@@ -168,27 +283,35 @@
                             </div>
 
                             <!-- Climate Grid -->
-                            <div class="climate-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <div class="climate-grid"
+                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                                 <div class="chart-container card" style="height: 320px;">
-                                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-cloud-sun-rain" style="margin-right: 8px;"></i> Climate: Temp & Rainfall</h3>
-                                    <div class="canvas-wrapper" style="position: relative; height: 260px; width: 100%;"><canvas id="climateChart"></canvas></div>
+                                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-cloud-sun-rain"
+                                            style="margin-right: 8px;"></i> Climate: Temp & Rainfall</h3>
+                                    <div class="canvas-wrapper" style="position: relative; height: 260px; width: 100%;">
+                                        <canvas id="climateChart"></canvas></div>
                                 </div>
                                 <div class="chart-container card" style="height: 320px;">
-                                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-flask" style="margin-right: 8px;"></i> Soil: pH & Humidity</h3>
-                                    <div class="canvas-wrapper" style="position: relative; height: 260px; width: 100%;"><canvas id="soilParamChart"></canvas></div>
+                                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-flask"
+                                            style="margin-right: 8px;"></i> Soil: pH & Humidity</h3>
+                                    <div class="canvas-wrapper" style="position: relative; height: 260px; width: 100%;">
+                                        <canvas id="soilParamChart"></canvas></div>
                                 </div>
                             </div>
                         </div>
                     </section>
                 </div> <!-- End Expert View -->
             </div>
-            
-            <div id="empty-state" class="empty-state card" style="text-align: center; padding: 4rem 2rem; margin-top: 2rem; border: 1px dashed rgba(255,255,255,0.2);">
-                <i class="fa-solid fa-chart-line fa-4x" style="color: rgba(255,255,255,0.1); margin-bottom: 1.5rem;"></i>
+
+            <div id="empty-state" class="empty-state card"
+                style="text-align: center; padding: 4rem 2rem; margin-top: 2rem; border: 1px dashed rgba(255,255,255,0.2);">
+                <i class="fa-solid fa-chart-line fa-4x"
+                    style="color: rgba(255,255,255,0.1); margin-bottom: 1.5rem;"></i>
                 <h3 style="color: #8b949e;">Awaiting Sensor Logs</h3>
-                <p style="color: #8b949e; max-width: 400px; margin: 0 auto;">Upload a CSV file containing time-series data to generate multi-dimensional insights and AI recommendations.</p>
+                <p style="color: #8b949e; max-width: 400px; margin: 0 auto;">Upload a CSV file containing time-series
+                    data to generate multi-dimensional insights and AI recommendations.</p>
             </div>
-            
+
         </main>
     </div>
 

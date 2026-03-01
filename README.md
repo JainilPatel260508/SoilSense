@@ -2,6 +2,33 @@
 
 A Soil Health Dashboard that converts raw sensor logs into actionable agricultural intelligence.
 
+---
+
+## How to run (fix "No crops loaded")
+
+1. **Start the backend** (from this folder: `hackathon69/SoilSense`):
+   ```bash
+   cd hackathon69/SoilSense
+   python3 backend/app.py
+   ```
+   Leave this terminal open. You should see: `Model trained successfully...` and the app running on port 5001.
+
+2. **Stop any old backend**  
+   If you already had something on port 5001, stop it (Ctrl+C in that terminal) so the new backend with crop labels is the one running.
+
+3. **Serve the frontend** (in a second terminal):
+   ```bash
+   cd hackathon69/SoilSense
+   python3 -m http.server 8080
+   ```
+
+4. **Open in browser:** http://localhost:8080  
+   Do not open the HTML file directly (file://). Use the URL above so the app can call the backend.
+
+5. **Check backend:** Open http://127.0.0.1:5001/api/crop_labels — you should see JSON with a list of crops. If you see 404, the backend running is old; restart it from step 1.
+
+---
+
 ## 1. Problem Statement
 
 ### Problem Title

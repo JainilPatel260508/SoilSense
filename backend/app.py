@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -8,40 +9,88 @@ from flask_cors import CORS
 import logging
 import io
 
+# Path to Kaggle Crop Recommendation Dataset (download from https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset)
+DATASET_DIR = os.path.join(os.path.dirname(__file__), "data")
+DATASET_NAMES = ["Crop_recommendation.csv", "crop_recommendation.csv", "CropRecommendation.csv"]
+
 app = Flask(__name__)
 # Enable CORS so the local frontend can make requests to this backend
 CORS(app)
 
 logging.basicConfig(level=logging.INFO)
 
-# Global variables to hold the trained model
+# Global variables to hold the trained model and data-derived ranges
 rf_model = None
+TRAINED_CROP_LABELS = []
+FAVOURABLE_RANGES = {}  # per-crop numeric min/max from training data (for current vs ideal)
+
+# Ideal conditions and care summary per crop (for "what this crop needs")
+CROP_REQUIREMENTS = {
+    "rice": {"N": "50–120", "P": "20–50", "K": "30–50", "temp": "20–35°C", "humidity": "60–85%", "ph": "5–7.5", "rainfall": "150–300 mm", "care": "Keep soil flooded in growth phase; top-dress N at tillering; ensure good drainage."},
+    "maize": {"N": "80–120", "P": "25–50", "K": "40–80", "temp": "18–32°C", "humidity": "50–80%", "ph": "5.5–7", "rainfall": "50–150 mm", "care": "Side-dress N at knee-high; avoid waterlogging; adequate P at planting."},
+    "chickpea": {"N": "20–40", "P": "25–50", "K": "25–50", "temp": "15–30°C", "humidity": "40–70%", "ph": "6–7.5", "rainfall": "30–80 mm", "care": "Low N requirement (fixes own); inoculate with rhizobium; avoid excess water."},
+    "kidneybeans": {"N": "25–50", "P": "30–60", "K": "30–60", "temp": "18–27°C", "humidity": "50–75%", "ph": "6–7", "rainfall": "40–100 mm", "care": "Inoculate with bean rhizobium; even moisture during flowering; avoid high N."},
+    "apple": {"N": "40–80", "P": "30–60", "K": "80–150", "temp": "15–25°C", "humidity": "50–70%", "ph": "5.5–6.5", "rainfall": "50–120 mm", "care": "Balanced NPK; mulch to retain moisture; calcium for fruit quality."},
+    "orange": {"N": "60–100", "P": "30–60", "K": "100–180", "temp": "20–32°C", "humidity": "55–75%", "ph": "5.5–6.5", "rainfall": "60–150 mm", "care": "Higher K for fruit; micro-nutrients (Zn, Mg); avoid water stress at flowering."},
+    "coffee": {"N": "80–120", "P": "20–40", "K": "80–120", "temp": "18–24°C", "humidity": "60–80%", "ph": "5–6", "rainfall": "150–250 mm", "care": "Shade in hot areas; mulch; avoid frost; balanced N during vegetative growth."},
+}
+
+def _find_dataset_path():
+    """Locate the Kaggle crop recommendation CSV in backend/data/ or backend/."""
+    for name in DATASET_NAMES:
+        for base in [DATASET_DIR, os.path.dirname(__file__)]:
+            path = os.path.join(base, name)
+            if os.path.isfile(path):
+                return path
+    return None
+
+
+def _load_and_prepare_df():
+    """Load CSV and return DataFrame with columns N, P, K, temperature, humidity, ph, rainfall, label."""
+    path = _find_dataset_path()
+    if not path:
+        raise FileNotFoundError(
+            "Crop recommendation dataset not found. Download from "
+            "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset "
+            f"and place the CSV in: {os.path.abspath(DATASET_DIR)}"
+        )
+    logging.info("Loading dataset: %s", path)
+    df = pd.read_csv(path)
+
+    # Normalize column names to match expected: N, P, K, temperature, humidity, ph, rainfall, label
+    def norm(name):
+        n = str(name).strip().lower()
+        if n in ("label", "crop"):
+            return "label"
+        if n == "ph":
+            return "ph"
+        if n in ("n", "p", "k"):
+            return n.upper()
+        if n in ("temperature", "humidity", "rainfall"):
+            return n
+        return name
+
+    df = df.rename(columns={c: norm(c) for c in df.columns})
+
+    required = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
+    missing = [c for c in required + ["label"] if c not in df.columns]
+    if missing:
+        raise ValueError(f"Dataset missing required columns: {missing}. Found: {list(df.columns)}")
+
+    df = df[required + ["label"]].dropna()
+    df["label"] = df["label"].astype(str).str.strip().str.lower()
+    return df
+
 
 def train_model():
-    """Trains the RandomForest model using synthetic data on startup."""
-    global rf_model
-    logging.info("Training ML model using synthetic data...")
-    # ==========================================
-    # DATA PREPARATION
-    # ==========================================
-    np.random.seed(42)
-    data_size = 500
-    df = pd.DataFrame({
-        'N': np.random.randint(0, 140, data_size),
-        'P': np.random.randint(5, 145, data_size),
-        'K': np.random.randint(5, 205, data_size),
-        'temperature': np.random.uniform(10.0, 40.0, data_size),
-        'humidity': np.random.uniform(15.0, 95.0, data_size),
-        'ph': np.random.uniform(3.5, 9.5, data_size),
-        'rainfall': np.random.uniform(20.0, 300.0, data_size),
-        'label': np.random.choice(['rice', 'maize', 'chickpea', 'kidneybeans', 'apple', 'orange', 'coffee'], data_size)
-    })
+    """Train RandomForest on the Kaggle Crop Recommendation Dataset; derive crop labels and favourable ranges."""
+    global rf_model, TRAINED_CROP_LABELS, FAVOURABLE_RANGES
+    logging.info("Training on Kaggle Crop Recommendation Dataset...")
 
-    # ==========================================
-    # MODEL TRAINING
-    # ==========================================
-    X = df[['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']]
-    y = df['label']
+    df = _load_and_prepare_df()
+    feature_cols = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
+    X = df[feature_cols]
+    y = df["label"]
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -50,7 +99,31 @@ def train_model():
 
     predictions = rf_model.predict(X_test)
     acc = accuracy_score(y_test, predictions) * 100
-    logging.info(f"Model trained successfully. Accuracy: {acc:.2f}%")
+    logging.info("Model trained successfully. Accuracy: %.2f%%", acc)
+
+    TRAINED_CROP_LABELS = sorted(df["label"].unique().tolist())
+    FAVOURABLE_RANGES.clear()
+    for crop in TRAINED_CROP_LABELS:
+        crop_df = df[df["label"] == crop]
+        FAVOURABLE_RANGES[crop] = {
+            col: [float(crop_df[col].min()), float(crop_df[col].max())]
+            for col in feature_cols
+        }
+
+    # Ensure CROP_REQUIREMENTS has an entry for every trained crop (for display)
+    for crop in TRAINED_CROP_LABELS:
+        if crop not in CROP_REQUIREMENTS and crop in FAVOURABLE_RANGES:
+            r = FAVOURABLE_RANGES[crop]
+            CROP_REQUIREMENTS[crop] = {
+                "N": f"{r['N'][0]:.0f}–{r['N'][1]:.0f}",
+                "P": f"{r['P'][0]:.0f}–{r['P'][1]:.0f}",
+                "K": f"{r['K'][0]:.0f}–{r['K'][1]:.0f}",
+                "temp": f"{r['temperature'][0]:.1f}–{r['temperature'][1]:.1f}°C",
+                "humidity": f"{r['humidity'][0]:.0f}–{r['humidity'][1]:.0f}%",
+                "ph": f"{r['ph'][0]:.1f}–{r['ph'][1]:.1f}",
+                "rainfall": f"{r['rainfall'][0]:.0f}–{r['rainfall'][1]:.0f} mm",
+                "care": "Use favourable ranges from the table for soil management.",
+            }
 
 def analyze_time_series_data(df, model):
     """
@@ -141,6 +214,8 @@ def analyze_time_series_data(df, model):
         'rainfall': chart_data_df['rainfall'].tolist()
     }
 
+    crop_reqs = CROP_REQUIREMENTS.get(predicted_crop, {})
+
     return {
         "predicted_crop": predicted_crop,
         "soil_health_status": soil_health,
@@ -152,12 +227,23 @@ def analyze_time_series_data(df, model):
             "temperature": temp_trend,
             "nitrogen": n_trend
         },
-        "time_series_data": time_series_data
+        "time_series_data": time_series_data,
+        "crop_requirements": crop_reqs,
+        "all_crop_requirements": CROP_REQUIREMENTS,
+        "crop_labels": TRAINED_CROP_LABELS,
+        "current_averages": {k: float(v) for k, v in recent_averages.items()},
+        "crop_favourable_ranges": {c: {k: [float(x) for x in v] for k, v in ranges.items()} for c, ranges in FAVOURABLE_RANGES.items()},
     }
 
 @app.route("/", methods=["GET"])
 def health_check():
     return jsonify({"status": "healthy", "message": "SoilSense Time-Series ML Backend is running."})
+
+
+@app.route("/api/crop_labels", methods=["GET"])
+def crop_labels():
+    """Return list of crop labels the model was trained on (for dropdowns)."""
+    return jsonify({"crop_labels": TRAINED_CROP_LABELS})
 
 @app.route("/api/analyze_csv", methods=["POST"])
 def analyze_csv():

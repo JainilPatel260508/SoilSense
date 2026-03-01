@@ -1,5 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // --- Fetch crop labels from backend on load (so dropdowns have options when results show) ---
+    fetch('http://127.0.0.1:5001/api/crop_labels')
+        .then(res => res.json())
+        .then(data => {
+            if (data.crop_labels && data.crop_labels.length) {
+                window._cropLabels = data.crop_labels;
+                populateCropDropdowns(data.crop_labels);
+            }
+        })
+        .catch(() => { window._cropLabels = []; });
+
     // --- References to DOM Elements ---
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('csv-file-input');
@@ -154,6 +165,263 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Choice bar: collapse (hide pills, show summary) / expand ---
+    function collapseChoiceBar() {
+        const collapsed = document.getElementById('choice-bar-collapsed');
+        const expanded = document.getElementById('choice-bar-expanded');
+        if (collapsed) collapsed.style.display = 'flex';
+        if (expanded) expanded.style.display = 'none';
+    }
+    function expandChoiceBar() {
+        const collapsed = document.getElementById('choice-bar-collapsed');
+        const expanded = document.getElementById('choice-bar-expanded');
+        if (collapsed) collapsed.style.display = 'none';
+        if (expanded) expanded.style.display = 'flex';
+    }
+    function updateChoiceBarSummary() {
+        const summaryEl = document.getElementById('choice-bar-summary');
+        if (!summaryEl) return;
+        const isAlreadySown = (document.querySelector('input[name="sowStatusResults"]:checked') || document.querySelector('input[name="sowStatus"]:checked'))?.value === 'already';
+        const sowChoice = (document.querySelector('input[name="sowChoice"]:checked') || { value: 'own' }).value;
+        if (isAlreadySown) summaryEl.textContent = 'Viewing as: Already sown';
+        else if (sowChoice === 'own') summaryEl.textContent = 'Viewing as: Sow seeds • Full overview';
+        else if (sowChoice === 'recommendation') summaryEl.textContent = 'Viewing as: Sow seeds • Recommendation';
+        else summaryEl.textContent = 'Viewing as: Sow seeds • I want to sow';
+    }
+
+    // --- Apply show/hide based on situation + view choice (uses _lastAnalyzeResult or passed data) ---
+    function applyChoiceLayout(data) {
+        const d = data || window._lastAnalyzeResult;
+        if (!d) return;
+        const isAlreadySown = (document.querySelector('input[name="sowStatusResults"]:checked') || document.querySelector('input[name="sowStatus"]:checked'))?.value === 'already';
+        const sowChoice = (document.querySelector('input[name="sowChoice"]:checked') || { value: 'own' }).value;
+        const cropRecCard = document.getElementById('crop-rec-card');
+        const cropNeedsCard = document.getElementById('crop-needs-card');
+        const showMeGroup = document.getElementById('show-me-group');
+        const alreadySownBlock = document.getElementById('already-sown-block');
+        const managementCard = document.getElementById('already-sown-management-card');
+
+        if (isAlreadySown) {
+            cropRecCard.style.display = 'none';
+            cropNeedsCard.style.display = 'none';
+            if (showMeGroup) showMeGroup.style.display = 'none';
+            if (alreadySownBlock) alreadySownBlock.style.display = 'block';
+            // Ensure crop dropdown has options whenever we show this block
+            populateCropDropdowns(d.crop_labels || window._cropLabels);
+            const sel = document.getElementById('sown-crop-select');
+            const reqs = (d.all_crop_requirements || {})[sel && sel.value ? sel.value : ''];
+            if (reqs && managementCard) {
+                managementCard.style.display = 'block';
+                renderCropNeeds(sel.value, reqs, 'already-sown-management-content');
+            } else if (managementCard) managementCard.style.display = 'none';
+        } else {
+            if (alreadySownBlock) alreadySownBlock.style.display = 'none';
+            if (showMeGroup) showMeGroup.style.display = 'flex';
+            const sowSpecificBlock = document.getElementById('sow-specific-block');
+            if (sowChoice === 'own') {
+                cropRecCard.style.display = 'block';
+                cropNeedsCard.style.display = 'none';
+                if (sowSpecificBlock) sowSpecificBlock.style.display = 'none';
+            } else if (sowChoice === 'recommendation') {
+                cropRecCard.style.display = 'none';
+                cropNeedsCard.style.display = 'block';
+                if (sowSpecificBlock) sowSpecificBlock.style.display = 'none';
+                renderCropNeeds(d.predicted_crop, d.crop_requirements || {}, 'crop-needs-content');
+            } else {
+                cropRecCard.style.display = 'none';
+                cropNeedsCard.style.display = 'none';
+                if (sowSpecificBlock) sowSpecificBlock.style.display = 'block';
+                const wantSelect = document.getElementById('want-sow-crop-select');
+                if (wantSelect && wantSelect.value) {
+                    renderCropReadiness(wantSelect.value, d.current_averages || {}, d.crop_favourable_ranges || {}, d.all_crop_requirements || {});
+                    const card = document.getElementById('sow-specific-readiness-card');
+                    if (card) card.style.display = 'block';
+                } else {
+                    const card = document.getElementById('sow-specific-readiness-card');
+                    const content = document.getElementById('sow-specific-readiness-content');
+                    if (card) card.style.display = 'none';
+                    if (content) content.innerHTML = '<p class="ai-desc">Select a crop above to see if your soil is ready.</p>';
+                }
+            }
+        }
+        updateChoiceBarSummary();
+    }
+
+    // --- Crop labels cache (from API or analyze response) ---
+    function getCropLabels(callback) {
+        if (window._cropLabels && window._cropLabels.length) {
+            callback(window._cropLabels);
+            return;
+        }
+        fetch('http://127.0.0.1:5001/api/crop_labels')
+            .then(res => res.json())
+            .then(data => {
+                const labels = (data && data.crop_labels) ? data.crop_labels : [];
+                if (labels.length) window._cropLabels = labels;
+                callback(labels);
+            })
+            .catch(() => callback([]));
+    }
+
+    // --- Populate crop dropdowns (hidden inputs + custom list content); also used after CSV to set _cropLabels ---
+    function populateCropDropdowns(cropLabels) {
+        const raw = Array.isArray(cropLabels) ? cropLabels : [];
+        const labels = raw.map(c => (typeof c === 'string' ? c : String(c)).trim()).filter(Boolean);
+        if (labels.length) window._cropLabels = labels;
+        // Fill custom list panels so next time user opens dropdown, options are there
+        const sownList = document.getElementById('sown-crop-list');
+        const wantList = document.getElementById('want-sow-crop-list');
+        const optionHtml = labels.map(c => {
+            const name = c.charAt(0).toUpperCase() + c.slice(1);
+            return `<button type="button" class="custom-crop-option" data-value="${c.replace(/"/g, '&quot;')}">${name.replace(/</g, '&lt;')}</button>`;
+        }).join('');
+        if (sownList) sownList.innerHTML = optionHtml;
+        if (wantList) wantList.innerHTML = optionHtml;
+    }
+
+    // --- Open custom dropdown and ensure options are loaded ---
+    function openCustomCropDropdown(btnId, listId, inputId, placeholder) {
+        const list = document.getElementById(listId);
+        const btn = document.getElementById(btnId);
+        const input = document.getElementById(inputId);
+        if (!list || !btn) return;
+        const hasOptions = list.querySelectorAll('.custom-crop-option').length > 0;
+        if (hasOptions) {
+            list.classList.add('is-open');
+            btn.setAttribute('aria-expanded', 'true');
+            list.setAttribute('aria-hidden', 'false');
+            return;
+        }
+        getCropLabels(labels => {
+            if (labels.length) {
+                const optionHtml = labels.map(c => {
+                    const name = c.charAt(0).toUpperCase() + c.slice(1);
+                    return `<button type="button" class="custom-crop-option" data-value="${c.replace(/"/g, '&quot;')}">${name.replace(/</g, '&lt;')}</button>`;
+                }).join('');
+                list.innerHTML = optionHtml;
+            } else {
+                list.innerHTML = '<div class="custom-crop-option" style="color: var(--text-secondary);">No crops loaded. Is the backend running?</div>';
+            }
+            list.classList.add('is-open');
+            btn.setAttribute('aria-expanded', 'true');
+            list.setAttribute('aria-hidden', 'false');
+        });
+    }
+
+    function closeCustomCropDropdown(listId, btnId) {
+        const list = document.getElementById(listId);
+        const btn = document.getElementById(btnId);
+        if (list) { list.classList.remove('is-open'); list.setAttribute('aria-hidden', 'true'); }
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function initCustomCropDropdown(btnId, listId, inputId, placeholder) {
+        const btn = document.getElementById(btnId);
+        const list = document.getElementById(listId);
+        const input = document.getElementById(inputId);
+        if (!btn || !list || !input) return;
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const isOpen = list.classList.contains('is-open');
+            if (isOpen) {
+                closeCustomCropDropdown(listId, btnId);
+            } else {
+                openCustomCropDropdown(btnId, listId, inputId, placeholder);
+            }
+        });
+        list.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const opt = e.target.closest('.custom-crop-option[data-value]');
+            if (!opt) return;
+            const value = opt.getAttribute('data-value');
+            input.value = value;
+            btn.textContent = opt.textContent.trim();
+            closeCustomCropDropdown(listId, btnId);
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.custom-crop-dropdown')) return;
+        closeCustomCropDropdown('sown-crop-list', 'sown-crop-btn');
+        closeCustomCropDropdown('want-sow-crop-list', 'want-sow-crop-btn');
+    });
+
+    // --- Render "Is your soil ready?" current vs ideal + soil-health advice ---
+    function renderCropReadiness(crop, currentAverages, favourableRanges, allReqs) {
+        const el = document.getElementById('sow-specific-readiness-content');
+        if (!el) return;
+        const ranges = favourableRanges[crop];
+        const current = currentAverages || {};
+        const reqs = allReqs[crop] || {};
+        if (!ranges || typeof ranges !== 'object') {
+            el.innerHTML = '<p class="ai-desc">No favourable data for this crop.</p>';
+            return;
+        }
+        const name = (crop || '').charAt(0).toUpperCase() + (crop || '').slice(1);
+        const paramLabels = { N: 'N (mg/kg)', P: 'P (mg/kg)', K: 'K (mg/kg)', temperature: 'Temp (°C)', humidity: 'Humidity (%)', ph: 'pH', rainfall: 'Rainfall (mm)' };
+        let html = `<p class="ai-desc" style="margin-bottom: 0.75rem;"><strong>${name}</strong> – favourable conditions (from model training data) vs your current soil:</p>`;
+        html += '<table class="readiness-table"><thead><tr><th>Parameter</th><th>Current</th><th>Ideal range</th><th>Status</th><th>Soil health</th></tr></thead><tbody>';
+        let allOk = true;
+        for (const [key, [min, max]] of Object.entries(ranges)) {
+            const cur = current[key];
+            const curVal = cur != null ? Number(cur) : null;
+            let status = '—';
+            let advice = '';
+            if (curVal != null && !Number.isNaN(curVal)) {
+                if (curVal >= min && curVal <= max) {
+                    status = '<span class="status-ok">OK</span>';
+                } else {
+                    allOk = false;
+                    if (curVal < min) {
+                        status = '<span class="status-low">Low</span>';
+                        if (key === 'N') advice = 'Add nitrogen (e.g. urea, compost) for healthy growth.';
+                        else if (key === 'P') advice = 'Add phosphorus (e.g. rock phosphate, bone meal) for roots.';
+                        else if (key === 'K') advice = 'Add potassium (e.g. potash) for vigour.';
+                        else if (key === 'ph') advice = 'Apply lime to raise pH or improve drainage.';
+                        else if (key === 'humidity' || key === 'rainfall') advice = 'Increase irrigation or mulch to retain moisture.';
+                        else if (key === 'temperature') advice = 'Consider planting when temps are in range, or use shade/mulch.';
+                        else advice = 'Bring into ideal range for best yield.';
+                    } else {
+                        status = '<span class="status-high">High</span>';
+                        if (key === 'N') advice = 'Avoid excess N; reduce fertiliser, allow leaching.';
+                        else if (key === 'P') advice = 'Avoid more P; excess can lock up micronutrients.';
+                        else if (key === 'ph') advice = 'Apply sulfur or organic matter to lower pH.';
+                        else if (key === 'humidity' || key === 'rainfall') advice = 'Improve drainage; avoid overwatering.';
+                        else advice = 'Bring into ideal range for soil health.';
+                    }
+                }
+            }
+            const rangeStr = min != null && max != null ? `${min.toFixed(1)} – ${max.toFixed(1)}` : '–';
+            const curStr = curVal != null ? curVal.toFixed(1) : '—';
+            html += `<tr><td>${paramLabels[key] || key}</td><td>${curStr}</td><td>${rangeStr}</td><td>${status}</td><td class="advice-cell">${advice || '—'}</td></tr>`;
+        }
+        html += '</tbody></table>';
+        if (allOk) html += '<p class="ai-desc status-ok" style="margin-top: 0.75rem;"><strong>Your current levels are suitable for this crop.</strong> Focus on maintaining soil health with the care tips below.</p>';
+        if (reqs.care) html += `<p class="ai-desc" style="margin-top: 0.75rem;">${reqs.care}</p>`;
+        el.innerHTML = html;
+    }
+
+    // --- Render "What this crop needs" from API crop_requirements (targetElId optional) ---
+    function renderCropNeeds(cropName, req, targetElId) {
+        const el = document.getElementById(targetElId || 'crop-needs-content');
+        if (!el) return;
+        if (!req || Object.keys(req).length === 0) {
+            el.innerHTML = '<p class="ai-desc">Select a crop above to see soil management guidance.</p>';
+            return;
+        }
+        const name = (cropName || '').charAt(0).toUpperCase() + (cropName || '').slice(1);
+        let html = `<p class="ai-desc" style="margin-bottom: 0.75rem;"><strong>${name}</strong> – ideal ranges:</p><ul style="margin: 0; padding-left: 1.25rem; color: #c9d1d9; font-size: 0.9rem;">`;
+        if (req.N) html += `<li>N: ${req.N} &nbsp; P: ${req.P || '–'} &nbsp; K: ${req.K || '–'}</li>`;
+        if (req.temp) html += `<li>Temp: ${req.temp} &nbsp; Humidity: ${req.humidity || '–'} &nbsp; pH: ${req.ph || '–'}</li>`;
+        if (req.rainfall) html += `<li>Rainfall: ${req.rainfall}</li>`;
+        html += '</ul>';
+        if (req.care) html += `<p class="ai-desc" style="margin-top: 0.75rem;">${req.care}</p>`;
+        el.innerHTML = html;
+    }
+
     // --- Helper function to set trend arrows ---
     function setTrendIcon(elementId, trend) {
         const el = document.getElementById(elementId);
@@ -192,6 +460,22 @@ document.addEventListener('DOMContentLoaded', () => {
             // Success! Populate the UI
             emptyState.style.display = 'none';
             resultsContainer.style.display = 'block';
+
+            // Sync upload section choice to results bar
+            const sowStatusChecked = document.querySelector('input[name="sowStatus"]:checked');
+            const resultsSowSow = document.getElementById('sowStatusResults-sow');
+            const resultsSowAlready = document.getElementById('sowStatusResults-already');
+            if (sowStatusChecked) {
+                if (sowStatusChecked.value === 'sow') resultsSowSow.checked = true;
+                else resultsSowAlready.checked = true;
+            }
+            // Hide top buttons: upload section "Your situation" once results are shown
+            const uploadSowOption = document.getElementById('upload-sow-option');
+            if (uploadSowOption) uploadSowOption.style.display = 'none';
+            // Show choice bar expanded so user can pick options and click Apply
+            updateChoiceBarSummary();
+            expandChoiceBar();
+            applyChoiceLayout(data);
 
             // Populate Recommendation Cards
             document.getElementById('rec-crop-name').innerText = data.predicted_crop.charAt(0).toUpperCase() + data.predicted_crop.slice(1);
@@ -259,6 +543,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Draw Charts
             updateCharts(data.time_series_data);
+
+            // Populate crop dropdowns (from response or from earlier fetch; if still none, fetch now)
+            const labels = data.crop_labels || window._cropLabels;
+            if (labels && labels.length) {
+                populateCropDropdowns(labels);
+            } else {
+                fetch('http://127.0.0.1:5001/api/crop_labels')
+                    .then(r => r.json())
+                    .then(o => {
+                        if (o.crop_labels && o.crop_labels.length) {
+                            window._cropLabels = o.crop_labels;
+                            populateCropDropdowns(o.crop_labels);
+                        }
+                    })
+                    .catch(() => {});
+            }
+
+            // Store latest result for sow-choice toggles
+            window._lastAnalyzeResult = data;
 
         } catch (error) {
             console.error("Error calling backend:", error);
@@ -344,5 +647,97 @@ document.addEventListener('DOMContentLoaded', () => {
             expertLabel.classList.remove('active');
         }
     });
+
+    // --- Sync situation: upload section <-> results bar; apply layout on change ---
+    function syncSowStatusToUpload() {
+        const res = document.querySelector('input[name="sowStatusResults"]:checked');
+        if (!res) return;
+        const sowEl = document.getElementById('sowStatus-sow');
+        const alreadyEl = document.getElementById('sowStatus-already');
+        if (sowEl) sowEl.checked = (res.value === 'sow');
+        if (alreadyEl) alreadyEl.checked = (res.value === 'already');
+    }
+    function syncSowStatusToResults() {
+        const up = document.querySelector('input[name="sowStatus"]:checked');
+        if (!up) return;
+        const sowEl = document.getElementById('sowStatusResults-sow');
+        const alreadyEl = document.getElementById('sowStatusResults-already');
+        if (sowEl) sowEl.checked = (up.value === 'sow');
+        if (alreadyEl) alreadyEl.checked = (up.value === 'already');
+    }
+    document.querySelectorAll('input[name="sowStatus"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            syncSowStatusToResults();
+            applyChoiceLayout();
+        });
+    });
+    document.querySelectorAll('input[name="sowStatusResults"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            syncSowStatusToUpload();
+            applyChoiceLayout();
+        });
+    });
+    document.querySelectorAll('input[name="sowChoice"]').forEach(radio => {
+        radio.addEventListener('change', () => applyChoiceLayout());
+    });
+
+    // Apply button: confirm choices and collapse the bar
+    const btnApplyChoice = document.getElementById('btn-apply-choice');
+    if (btnApplyChoice) {
+        btnApplyChoice.addEventListener('click', () => {
+            syncSowStatusToUpload();
+            applyChoiceLayout();
+            collapseChoiceBar();
+        });
+    }
+
+    // "Change" button: show full choice bar again
+    const btnChangeChoice = document.getElementById('btn-change-choice');
+    if (btnChangeChoice) btnChangeChoice.addEventListener('click', expandChoiceBar);
+
+    // Init custom crop dropdowns (load options when opened)
+    initCustomCropDropdown('sown-crop-btn', 'sown-crop-list', 'sown-crop-select', '— Select your crop —');
+    initCustomCropDropdown('want-sow-crop-btn', 'want-sow-crop-list', 'want-sow-crop-select', '— Select crop —');
+
+    // Already sown: which crop selected -> show soil management
+    const sownCropInput = document.getElementById('sown-crop-select');
+    if (sownCropInput) {
+        sownCropInput.addEventListener('change', () => {
+            const data = window._lastAnalyzeResult;
+            const allReqs = (data && data.all_crop_requirements) || {};
+            const crop = sownCropInput.value;
+            const reqs = allReqs[crop];
+            const managementCard = document.getElementById('already-sown-management-card');
+            const contentEl = document.getElementById('already-sown-management-content');
+            if (managementCard && contentEl) {
+                if (reqs) {
+                    managementCard.style.display = 'block';
+                    renderCropNeeds(crop, reqs, 'already-sown-management-content');
+                } else {
+                    managementCard.style.display = 'none';
+                    contentEl.innerHTML = '<p class="ai-desc">Select your crop above.</p>';
+                }
+            }
+        });
+    }
+
+    // I want to sow: which crop selected -> show readiness (current vs ideal)
+    const wantSowCropInput = document.getElementById('want-sow-crop-select');
+    if (wantSowCropInput) {
+        wantSowCropInput.addEventListener('change', () => {
+            const data = window._lastAnalyzeResult;
+            if (!data) return;
+            const crop = wantSowCropInput.value;
+            const card = document.getElementById('sow-specific-readiness-card');
+            const content = document.getElementById('sow-specific-readiness-content');
+            if (crop) {
+                renderCropReadiness(crop, data.current_averages || {}, data.crop_favourable_ranges || {}, data.all_crop_requirements || {});
+                if (card) card.style.display = 'block';
+            } else {
+                if (card) card.style.display = 'none';
+                if (content) content.innerHTML = '<p class="ai-desc">Select a crop above to see if your soil is ready.</p>';
+            }
+        });
+    }
 
 });
