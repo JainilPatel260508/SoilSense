@@ -265,7 +265,13 @@ def analyze_csv():
 # Startup
 # ---------------------------------------------------------------------------
 
+# Initialize model and database when the module loads (required for Vercel/Serverless)
+try:
+    if rf_model is None:
+        train_model()
+        database.init_db()          # Attempt MongoDB connection (non-fatal)
+except Exception as e:
+    logger.error("Failed to initialize during startup: %s", e)
+
 if __name__ == "__main__":
-    train_model()
-    database.init_db()          # Attempt MongoDB connection (non-fatal)
     app.run(host="127.0.0.1", port=5002, debug=False)
