@@ -3,10 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const CACHE_KEY = 'soilsense_last_result';
 
     // Auto-detect environment for API URL
+    // When hosted on Vercel, frontend and backend share the same domain, so we use relative '/api'
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const API_BASE_URL = isLocal
         ? 'http://127.0.0.1:5002/api'
-        : 'https://soilsense-backend.onrender.com/api'; // TODO: Update this when backend is deployed
+        : '/api';
 
     // --- Fetch crop labels from backend on load (so dropdowns have options when results show) ---
     fetch(`${API_BASE_URL}/crop_labels`)
