@@ -285,5 +285,5 @@ def analyze_csv():
 
 if __name__ == "__main__":
     train_model()
-    # Run the server on localhost port 5001
-    app.run(host="127.0.0.1", port=5001, debug=False)
+    # Run the server on localhost port 5002
+    app.run(host="127.0.0.1", port=5002, debug=False)

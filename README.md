@@ -1,33 +1,7 @@
-# AgriSense
+# SoilSense
 
 A Soil Health Dashboard that converts raw sensor logs into actionable agricultural intelligence.
 
----
-
-## How to run (fix "No crops loaded")
-
-1. **Start the backend** (from this folder: `hackathon69/SoilSense`):
-   ```bash
-   cd hackathon69/SoilSense
-   python3 backend/app.py
-   ```
-   Leave this terminal open. You should see: `Model trained successfully...` and the app running on port 5001.
-
-2. **Stop any old backend**  
-   If you already had something on port 5001, stop it (Ctrl+C in that terminal) so the new backend with crop labels is the one running.
-
-3. **Serve the frontend** (in a second terminal):
-   ```bash
-   cd hackathon69/SoilSense
-   python3 -m http.server 8080
-   ```
-
-4. **Open in browser:** http://localhost:8080  
-   Do not open the HTML file directly (file://). Use the URL above so the app can call the backend.
-
-5. **Check backend:** Open http://127.0.0.1:5001/api/crop_labels — you should see JSON with a list of crops. If you see 404, the backend running is old; restart it from step 1.
-
----
 
 ## 1. Problem Statement
 
@@ -58,7 +32,7 @@ Build a centralized dashboard that processes CSV sensor logs using Machine Learn
 ## 3. Proposed Solution
 
 ### Solution Overview
-AgriSense is an intelligent dashboard tailored for agriculture. It ingests sensor data, applies an ML model to determine soil health and suitable crops, and visualizes the findings on an easy-to-read interface.
+SoilSense is an intelligent dashboard tailored for agriculture. It ingests sensor data, applies an ML model to determine soil health and suitable crops, and visualizes the findings on an easy-to-read interface.
 
 ### Core Idea
 Move from raw data to actionable agricultural intelligence using a robust ML model capable of handling non-linear real-world variables.
@@ -132,4 +106,4 @@ Handles non-linear relationships between variables (like how pH and Rainfall aff
 - **Demo Video Link**: [To be added]
 
 ## 11. Impact
-AgriSense transforms farming from a reactive task to a proactive, data-driven science. By accurately interpreting soil health, it prevents soil degradation, optimizes resource application (fertilizers/water), and ultimately improves sustainable crop yields.
+SoilSense transforms farming from a reactive task to a proactive, data-driven science. By accurately interpreting soil health, it prevents soil degradation, optimizes resource application (fertilizers/water), and ultimately improves sustainable crop yields.
