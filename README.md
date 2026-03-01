@@ -102,7 +102,7 @@ Handles non-linear relationships between variables (like how pH and Rainfall aff
 
 ## 10. Demo & Links
 
-- **Live Demo Link**: [To be added]
+- **Deployed Link**: https://soil-sense-three.vercel.app/
 - **Google Drive Link**:https://drive.google.com/drive/folders/132P1dELqMbG9LacfPhwKVwsYtCeuFAy_?usp=sharing
 
 ## 11. Impact
