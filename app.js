@@ -2,8 +2,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const CACHE_KEY = 'soilsense_last_result';
 
+    // Auto-detect environment for API URL
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const API_BASE_URL = isLocal
+        ? 'http://127.0.0.1:5002/api'
+        : 'https://soilsense-backend.onrender.com/api'; // TODO: Update this when backend is deployed
+
     // --- Fetch crop labels from backend on load (so dropdowns have options when results show) ---
-    fetch('http://127.0.0.1:5002/api/crop_labels')
+    fetch(`${API_BASE_URL}/crop_labels`)
         .then(res => res.json())
         .then(data => {
             if (data.crop_labels && data.crop_labels.length) {
@@ -255,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
             callback(window._cropLabels);
             return;
         }
-        fetch('http://127.0.0.1:5002/api/crop_labels')
+        fetch(`${API_BASE_URL}/crop_labels`)
             .then(res => res.json())
             .then(data => {
                 const labels = (data && data.crop_labels) ? data.crop_labels : [];
@@ -448,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('file', file);
 
         try {
-            const response = await fetch('http://127.0.0.1:5002/api/analyze_csv', {
+            const response = await fetch(`${API_BASE_URL}/analyze_csv`, {
                 method: 'POST',
                 body: formData
             });
@@ -551,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (labels && labels.length) {
                 populateCropDropdowns(labels);
             } else {
-                fetch('http://127.0.0.1:5002/api/crop_labels')
+                fetch(`${API_BASE_URL}/crop_labels`)
                     .then(r => r.json())
                     .then(o => {
                         if (o.crop_labels && o.crop_labels.length) {
