@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- Fetch crop labels from backend on load (so dropdowns have options when results show) ---
-    fetch('http://127.0.0.1:5001/api/crop_labels')
+    fetch('http://127.0.0.1:5002/api/crop_labels')
         .then(res => res.json())
         .then(data => {
             if (data.crop_labels && data.crop_labels.length) {
@@ -31,9 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { 
-                position: 'top', 
-                labels: { color: '#8b949e', font: { family: 'Inter', size: 12 } } 
+            legend: {
+                position: 'top',
+                labels: { color: '#8b949e', font: { family: 'Inter', size: 12 } }
             },
             tooltip: {
                 mode: 'index', intersect: false,
@@ -43,13 +43,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
         scales: {
-            x: { 
-                grid: { color: 'rgba(48, 54, 61, 0.5)' }, 
-                ticks: { color: '#8b949e', maxRotation: 45, minRotation: 0 } 
+            x: {
+                grid: { color: 'rgba(48, 54, 61, 0.5)' },
+                ticks: { color: '#8b949e', maxRotation: 45, minRotation: 0 }
             },
-            y: { 
-                grid: { color: 'rgba(48, 54, 61, 0.5)' }, 
-                ticks: { color: '#8b949e' } 
+            y: {
+                grid: { color: 'rgba(48, 54, 61, 0.5)' },
+                ticks: { color: '#8b949e' }
             }
         },
         interaction: { mode: 'nearest', axis: 'x', intersect: false },
@@ -125,8 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ...commonChartOptions,
                 scales: {
                     x: { ...commonChartOptions.scales.x, offset: true },
-                    y: { ...commonChartOptions.scales.y, type: 'linear', display: true, position: 'left', title: {display: true, text: 'Temp', color: '#8b949e'} },
-                    y1: { type: 'linear', display: true, position: 'right', grid: {drawOnChartArea: false}, title: {display: true, text: 'Rain', color: '#8b949e'} }
+                    y: { ...commonChartOptions.scales.y, type: 'linear', display: true, position: 'left', title: { display: true, text: 'Temp', color: '#8b949e' } },
+                    y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Rain', color: '#8b949e' } }
                 }
             }
         });
@@ -158,8 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ...commonChartOptions,
                 scales: {
                     x: { ...commonChartOptions.scales.x },
-                    y: { ...commonChartOptions.scales.y, min: 0, max: 14, title: {display: true, text: 'pH', color: '#8b949e'} },
-                    y1: { type: 'linear', display: true, position: 'right', min: 0, max: 100, grid: {drawOnChartArea: false}, title: {display: true, text: 'Humidity %', color: '#8b949e'} }
+                    y: { ...commonChartOptions.scales.y, min: 0, max: 14, title: { display: true, text: 'pH', color: '#8b949e' } },
+                    y1: { type: 'linear', display: true, position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, title: { display: true, text: 'Humidity %', color: '#8b949e' } }
                 }
             }
         });
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
             callback(window._cropLabels);
             return;
         }
-        fetch('http://127.0.0.1:5001/api/crop_labels')
+        fetch('http://127.0.0.1:5002/api/crop_labels')
             .then(res => res.json())
             .then(data => {
                 const labels = (data && data.crop_labels) ? data.crop_labels : [];
@@ -427,10 +427,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const el = document.getElementById(elementId);
         if (trend === 'increasing') {
             el.innerHTML = '<i class="fa-solid fa-arrow-up" style="color: #ff7b72;"></i>'; // Red up (usually bad or warming)
-            if(elementId === 'trend-n') el.innerHTML = '<i class="fa-solid fa-arrow-up" style="color: #3fb950;"></i>'; // Green up for N
+            if (elementId === 'trend-n') el.innerHTML = '<i class="fa-solid fa-arrow-up" style="color: #3fb950;"></i>'; // Green up for N
         } else if (trend === 'decreasing') {
             el.innerHTML = '<i class="fa-solid fa-arrow-down" style="color: #3fb950;"></i>'; // Green down
-            if(elementId === 'trend-n' || elementId === 'trend-moisture') el.innerHTML = '<i class="fa-solid fa-arrow-down" style="color: #ff7b72;"></i>'; // Red down for N/Moisture
+            if (elementId === 'trend-n' || elementId === 'trend-moisture') el.innerHTML = '<i class="fa-solid fa-arrow-down" style="color: #ff7b72;"></i>'; // Red down for N/Moisture
         } else {
             el.innerHTML = '<i class="fa-solid fa-minus" style="color: #8b949e;"></i>';
         }
@@ -446,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('file', file);
 
         try {
-            const response = await fetch('http://127.0.0.1:5001/api/analyze_csv', {
+            const response = await fetch('http://127.0.0.1:5002/api/analyze_csv', {
                 method: 'POST',
                 body: formData
             });
@@ -490,11 +490,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Populate Average Metrics (take the last value from the time series as the "current")
             const len = data.time_series_data.N.length;
-            document.getElementById('val-n').innerText = data.time_series_data.N[len-1].toFixed(1);
-            document.getElementById('val-p').innerText = data.time_series_data.P[len-1].toFixed(1);
-            document.getElementById('val-k').innerText = data.time_series_data.K[len-1].toFixed(1);
-            document.getElementById('val-temp').innerHTML = `${data.time_series_data.temperature[len-1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">°C</span>`;
-            document.getElementById('val-moisture').innerHTML = `${data.time_series_data.humidity[len-1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">%</span>`;
+            document.getElementById('val-n').innerText = data.time_series_data.N[len - 1].toFixed(1);
+            document.getElementById('val-p').innerText = data.time_series_data.P[len - 1].toFixed(1);
+            document.getElementById('val-k').innerText = data.time_series_data.K[len - 1].toFixed(1);
+            document.getElementById('val-temp').innerHTML = `${data.time_series_data.temperature[len - 1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">°C</span>`;
+            document.getElementById('val-moisture').innerHTML = `${data.time_series_data.humidity[len - 1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">%</span>`;
 
             // Set Trends
             setTrendIcon('trend-n', data.trends.nitrogen);
@@ -507,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.active_alerts.forEach(alertText => {
                     const alertDiv = document.createElement('div');
                     alertDiv.className = 'alert-card';
-                    
+
                     let icon = '⚠️';
                     if (alertText.includes("CRITICAL")) {
                         alertDiv.classList.add('critical');
@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (labels && labels.length) {
                 populateCropDropdowns(labels);
             } else {
-                fetch('http://127.0.0.1:5001/api/crop_labels')
+                fetch('http://127.0.0.1:5002/api/crop_labels')
                     .then(r => r.json())
                     .then(o => {
                         if (o.crop_labels && o.crop_labels.length) {
@@ -557,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             populateCropDropdowns(o.crop_labels);
                         }
                     })
-                    .catch(() => {});
+                    .catch(() => { });
             }
 
             // Store latest result for sow-choice toggles
@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const files = dt.files;
         if (files && files.length > 0) {
             const file = files[0];
-            if(file.name.endsWith('.csv')){
+            if (file.name.endsWith('.csv')) {
                 processCSV(file);
             } else {
                 alert("Please upload a .csv file.");
@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInput.click();
     });
 
-    fileInput.addEventListener('change', function(e) {
+    fileInput.addEventListener('change', function (e) {
         if (this.files && this.files.length > 0) {
             processCSV(this.files[0]);
         }

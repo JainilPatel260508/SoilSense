@@ -4,7 +4,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-url = 'http://127.0.0.1:5001/api/analyze_csv'
+url = 'http://127.0.0.1:5002/api/analyze_csv'
 files = {'file': open('test_sensor_data.csv', 'rb')}
 
 try:
