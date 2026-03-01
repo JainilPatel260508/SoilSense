@@ -667,3 +667,243 @@ input:checked + .slider:before {
     font-size: 1rem;
 }
 
+
+/* ============================================================
+   FOCUS VIEW  (.fv-*)  — Farmer-Friendly UI
+   All selectors prefixed .fv- to avoid any Expert View clash.
+   ============================================================ */
+
+/* Section wrapper */
+.fv-section {
+    margin-bottom: 2.5rem;
+}
+
+.fv-section-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.fv-section-icon {
+    font-size: 1.5rem;
+}
+
+/* ---- Section 1: Status Grid ---- */
+.fv-status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+}
+
+.fv-status-card {
+    border-radius: 16px;
+    padding: 1.75rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+    border: 2px solid transparent;
+    background-color: var(--bg-panel);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fv-status-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.fv-status-card.fv-good  { border-color: #3fb950; background: rgba(63, 185, 80, 0.07); }
+.fv-status-card.fv-warn  { border-color: #d29922; background: rgba(210, 153, 34, 0.07); }
+.fv-status-card.fv-critical { border-color: #f85149; background: rgba(248, 81, 73, 0.07); }
+
+.fv-status-emoji {
+    font-size: 3rem;
+    line-height: 1;
+}
+
+.fv-status-category {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+}
+
+.fv-status-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.fv-status-card.fv-good     .fv-status-label { color: #4ade80; }
+.fv-status-card.fv-warn     .fv-status-label { color: #fbbf24; }
+.fv-status-card.fv-critical .fv-status-label { color: #f87171; }
+
+.fv-status-sublabel {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* ---- Section 2: Action Cards ---- */
+.fv-action-card {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-left: 5px solid var(--accent-blue);
+    border-radius: 14px;
+    padding: 1.75rem 1.75rem 1.5rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+}
+
+.fv-action-card.fv-urgency-immediate { border-left-color: #f85149; }
+.fv-action-card.fv-urgency-week      { border-left-color: #d29922; }
+.fv-action-card.fv-urgency-monitor   { border-left-color: #3fb950; }
+
+.fv-action-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.fv-action-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fv-urgency-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.fv-urgency-badge.immediate { background: rgba(248,81,73,0.15); color: #f87171; border: 1px solid rgba(248,81,73,0.3); }
+.fv-urgency-badge.week      { background: rgba(210,153,34,0.15); color: #fbbf24; border: 1px solid rgba(210,153,34,0.3); }
+.fv-urgency-badge.monitor   { background: rgba(63,185,80,0.15);  color: #4ade80; border: 1px solid rgba(63,185,80,0.3);  }
+
+.fv-action-rows {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+.fv-action-row {
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+.fv-action-row-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+}
+
+.fv-action-row-text {
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    line-height: 1.45;
+}
+
+/* All-good card in Section 2 */
+.fv-all-good {
+    background: rgba(63, 185, 80, 0.06);
+    border: 2px solid rgba(63, 185, 80, 0.3);
+    border-radius: 14px;
+    padding: 2rem 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.fv-all-good-emoji { font-size: 2.5rem; }
+
+.fv-all-good-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #4ade80;
+    margin-bottom: 0.25rem;
+}
+
+.fv-all-good-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* ---- Section 3: Reasoning ---- */
+.fv-reasoning {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding: 1.75rem;
+}
+
+.fv-reasoning-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+}
+
+.fv-bullet-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.fv-bullet-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.fv-bullet-list li::before {
+    content: '—';
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    margin-top: 0.05rem;
+    opacity: 0.5;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+    .fv-status-grid { grid-template-columns: 1fr 1fr; }
+    .fv-action-rows { grid-template-columns: 1fr; }
+    .fv-reasoning   { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+    .fv-status-grid { grid-template-columns: 1fr; }
+}

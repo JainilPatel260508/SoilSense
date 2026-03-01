@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    const CACHE_KEY = 'soilsense_last_result';
+
     // --- Fetch crop labels from backend on load (so dropdowns have options when results show) ---
     fetch('http://127.0.0.1:5002/api/crop_labels')
         .then(res => res.json())
@@ -490,9 +492,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Populate Average Metrics (take the last value from the time series as the "current")
             const len = data.time_series_data.N.length;
-            document.getElementById('val-n').innerText = data.time_series_data.N[len - 1].toFixed(1);
-            document.getElementById('val-p').innerText = data.time_series_data.P[len - 1].toFixed(1);
-            document.getElementById('val-k').innerText = data.time_series_data.K[len - 1].toFixed(1);
+            document.getElementById('val-n').innerHTML = `${data.time_series_data.N[len - 1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">mg/kg</span>`;
+            document.getElementById('val-p').innerHTML = `${data.time_series_data.P[len - 1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">mg/kg</span>`;
+            document.getElementById('val-k').innerHTML = `${data.time_series_data.K[len - 1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">mg/kg</span>`;
             document.getElementById('val-temp').innerHTML = `${data.time_series_data.temperature[len - 1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">°C</span>`;
             document.getElementById('val-moisture').innerHTML = `${data.time_series_data.humidity[len - 1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">%</span>`;
 
@@ -560,8 +562,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     .catch(() => { });
             }
 
-            // Store latest result for sow-choice toggles
+            // Store latest result and persist to localStorage
             window._lastAnalyzeResult = data;
+            try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch (e) { }
+
+            // Render Focus View from same data (always, so it's ready when toggled)
+            renderFocusView(data);
+
+            // If currently in Focus View, show it; hide empty state
+            const isExpert = document.getElementById('viewToggle').checked;
+            if (!isExpert) {
+                focusViewEl.style.display = 'block';
+                focusEmptyEl.style.display = 'none';
+            }
 
         } catch (error) {
             console.error("Error calling backend:", error);
@@ -633,19 +646,213 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- View Toggle Logic ---
     const viewToggle = document.getElementById('viewToggle');
     const expertView = document.getElementById('expertView');
+    const focusViewEl = document.getElementById('focusView');
+    const focusEmptyEl = document.getElementById('focusView-empty');
     const farmerLabel = document.getElementById('farmerLabel');
     const expertLabel = document.getElementById('expertLabel');
 
-    viewToggle.addEventListener('change', (e) => {
-        if (e.target.checked) {
-            expertView.style.display = 'block';
-            expertLabel.classList.add('active');
-            farmerLabel.classList.remove('active');
+    // Show Focus View empty state on load (toggle is in Expert mode by default)
+    focusEmptyEl.style.display = 'none';
+
+    // -----------------------------------------------------------------------
+    // renderFocusView(data) — translate backend JSON into farmer-friendly UI
+    // -----------------------------------------------------------------------
+    function renderFocusView(data) {
+        // ---- ALERT TRANSLATION TABLE ----
+        const ALERT_MAP = [
+            {
+                match: t => t.includes('CRITICAL') && t.includes('Nitrogen'),
+                icon: '🌿', title: 'Add Nitrogen Fertilizer', urgency: 'immediate',
+                why: 'Nitrogen has been very low for several days in a row.',
+                act: 'Plants will get the nutrients they need and grow stronger.',
+                ignore: 'Crop growth will slow down and your harvest may be smaller.',
+            },
+            {
+                match: t => t.includes('WARNING') && t.includes('Nitrogen'),
+                icon: '🌿', title: 'Check Nitrogen Levels', urgency: 'week',
+                why: 'Nitrogen is a little lower than ideal for healthy crops.',
+                act: 'Crops will develop more evenly and produce a better yield.',
+                ignore: 'Plants may not develop fully and leaves could turn yellow.',
+            },
+            {
+                match: t => t.includes('High Phosphorus'),
+                icon: '⚗️', title: 'Stop Adding Phosphorus Fertilizer', urgency: 'week',
+                why: 'Phosphorus in your soil is already too high.',
+                act: 'Soil balance will restore naturally over the next few weeks.',
+                ignore: 'Soil may become less fertile and other nutrients get blocked.',
+            },
+            {
+                match: t => t.includes('Low Phosphorus'),
+                icon: '⚗️', title: 'Add Phosphorus Fertilizer', urgency: 'week',
+                why: 'Phosphorus is lower than healthy levels for growing crops.',
+                act: 'Root development will improve and plants grow more firmly.',
+                ignore: 'Roots may stay weak, making plants less able to absorb water.',
+            },
+            {
+                match: t => t.includes('acidic'),
+                icon: '🧪', title: 'Balance Your Soil Acidity', urgency: 'week',
+                why: 'Your soil is too acidic for most crops to grow well.',
+                act: 'Crops will absorb nutrients better and grow more vigorously.',
+                ignore: 'Many crops will struggle or fail to grow in overly acidic soil.',
+            },
+            {
+                match: t => t.includes('alkaline'),
+                icon: '🧪', title: 'Balance Your Soil Alkalinity', urgency: 'week',
+                why: 'Your soil is too alkaline, which locks out key nutrients.',
+                act: 'Nutrients will become available again for plants to absorb.',
+                ignore: 'Crops will absorb fewer nutrients and may look pale or stunted.',
+            },
+            {
+                match: t => t.includes('dry') || t.includes('irrigation') || t.includes('moisture'),
+                icon: '💧', title: 'Irrigate Your Field', urgency: 'immediate',
+                why: 'Soil is getting very dry and moisture is dropping.',
+                act: 'Plants will stay hydrated and continue growing healthily.',
+                ignore: 'Crops may wilt, growth will stop, and plants could die.',
+            },
+        ];
+
+        const URGENCY_LABEL = { immediate: '⚡ Immediate', week: '📅 This Week', monitor: '👁 Monitor' };
+
+        // ---- SECTION 1: YOUR FARM TODAY ----
+        const statusGrid = document.getElementById('fv-status-grid');
+
+        // 1a. Soil Health
+        const healthRaw = (data.soil_health_status || 'Unknown').toLowerCase();
+        const healthCfg = {
+            excellent: { cls: 'fv-good', emoji: '✅', label: 'Good', sub: 'Your soil is in great shape.' },
+            fair: { cls: 'fv-warn', emoji: '⚠️', label: 'Needs Attention', sub: 'Some things need to be fixed.' },
+            poor: { cls: 'fv-critical', emoji: '🚨', label: 'Critical', sub: 'Immediate action required.' },
+        }[healthRaw] || { cls: 'fv-warn', emoji: '❓', label: 'Unknown', sub: '' };
+
+        // 1b. Water Status
+        const moistureTrend = (data.trends || {}).moisture || 'stable';
+        const avgHumidity = (data.current_averages || {}).humidity || 50;
+        let waterCfg;
+        if (avgHumidity < 35 || moistureTrend === 'decreasing') {
+            waterCfg = avgHumidity < 25
+                ? { cls: 'fv-critical', emoji: '🏜️', label: 'Very Dry', sub: 'Soil urgently needs water.' }
+                : { cls: 'fv-warn', emoji: '🌤️', label: 'Getting Dry', sub: 'Consider watering soon.' };
         } else {
-            expertView.style.display = 'none';
-            farmerLabel.classList.add('active');
-            expertLabel.classList.remove('active');
+            waterCfg = { cls: 'fv-good', emoji: '💧', label: 'Enough Water', sub: 'Soil moisture is fine.' };
         }
+
+        // 1c. Nutrient Status
+        const avgN = (data.current_averages || {}).N || 50;
+        let nutrientCfg;
+        if (avgN < 20) nutrientCfg = { cls: 'fv-critical', emoji: '🪴', label: 'Very Low', sub: 'Nutrients are critically low.' };
+        else if (avgN < 35) nutrientCfg = { cls: 'fv-warn', emoji: '🌾', label: 'Low', sub: 'Some nutrients need a top-up.' };
+        else nutrientCfg = { cls: 'fv-good', emoji: '🌱', label: 'Balanced', sub: 'Nutrient levels look healthy.' };
+
+        function makeStatusCard(cfg, category) {
+            return `<div class="fv-status-card ${cfg.cls}">
+                <div class="fv-status-emoji">${cfg.emoji}</div>
+                <div class="fv-status-category">${category}</div>
+                <div class="fv-status-label">${cfg.label}</div>
+                <div class="fv-status-sublabel">${cfg.sub}</div>
+            </div>`;
+        }
+
+        statusGrid.innerHTML =
+            makeStatusCard(healthCfg, 'Soil Health') +
+            makeStatusCard(waterCfg, 'Water Status') +
+            makeStatusCard(nutrientCfg, 'Nutrients');
+
+        // ---- SECTION 2: WHAT YOU SHOULD DO NOW ----
+        const actionsList = document.getElementById('fv-actions-list');
+        const alerts = data.active_alerts || [];
+
+        if (alerts.length === 0) {
+            actionsList.innerHTML = `<div class="fv-all-good">
+                <div class="fv-all-good-emoji">🎉</div>
+                <div>
+                    <div class="fv-all-good-title">Your farm looks great!</div>
+                    <div class="fv-all-good-desc">No action is needed right now. Keep doing what you are doing and upload new sensor readings regularly to stay on top of things.</div>
+                </div>
+            </div>`;
+        } else {
+            actionsList.innerHTML = alerts.map(alertText => {
+                const rule = ALERT_MAP.find(r => r.match(alertText))
+                    || {
+                    icon: '⚠️', title: 'Review Soil Condition', urgency: 'monitor',
+                    why: 'An unusual reading was detected in your sensor data.',
+                    act: 'Identifying the issue early prevents bigger problems.',
+                    ignore: 'The issue may worsen over time.'
+                };
+                const ugClass = `fv-urgency-${rule.urgency}`;
+                const ugLabel = URGENCY_LABEL[rule.urgency];
+                return `<div class="fv-action-card ${ugClass}">
+                    <div class="fv-action-header">
+                        <div class="fv-action-title">${rule.icon} ${rule.title}</div>
+                        <span class="fv-urgency-badge ${rule.urgency}">${ugLabel}</span>
+                    </div>
+                    <div class="fv-action-rows">
+                        <div class="fv-action-row">
+                            <div class="fv-action-row-label">Why</div>
+                            <div class="fv-action-row-text">${rule.why}</div>
+                        </div>
+                        <div class="fv-action-row">
+                            <div class="fv-action-row-label">If you act</div>
+                            <div class="fv-action-row-text">${rule.act}</div>
+                        </div>
+                        <div class="fv-action-row">
+                            <div class="fv-action-row-label">If you ignore</div>
+                            <div class="fv-action-row-text">${rule.ignore}</div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ---- SECTION 3: WHY WE ARE SAYING THIS ----
+        const noticedList = document.getElementById('fv-noticed-list');
+        const meansList = document.getElementById('fv-means-list');
+
+        const noticed = [];
+        const means = [];
+
+        const trends = data.trends || {};
+        if (trends.moisture === 'decreasing') noticed.push('Soil moisture is decreasing.');
+        if (trends.moisture === 'increasing') noticed.push('Soil moisture is increasing.');
+        if (trends.nitrogen === 'decreasing') noticed.push('Nitrogen is getting lower over time.');
+        if (trends.nitrogen === 'increasing') noticed.push('Nitrogen is building up in the soil.');
+        if (trends.temperature === 'increasing') noticed.push('Temperature has been rising recently.');
+        if (trends.temperature === 'decreasing') noticed.push('Temperature has been dropping recently.');
+
+        const avgs = data.current_averages || {};
+        if ((avgs.N || 999) < 30) noticed.push('Nitrogen is lower than the healthy range.');
+        if ((avgs.ph || 7) < 5.5) noticed.push('Soil acidity is higher than it should be.');
+        if ((avgs.ph || 7) > 7.5) noticed.push('Soil alkalinity is higher than it should be.');
+        if ((avgs.humidity || 99) < 40) noticed.push('Soil moisture level is quite low.');
+
+        if (noticed.length === 0) noticed.push('All soil readings are within healthy ranges.');
+
+        // Consequences
+        if (healthRaw === 'poor') {
+            means.push('Crops may struggle to grow properly with current soil conditions.');
+            means.push('Without action, yields may be significantly reduced this season.');
+        } else if (healthRaw === 'fair') {
+            means.push('Crops are growing but not at their full potential.');
+            means.push('Small improvements now can make a big difference to your harvest.');
+        } else {
+            means.push('Your crops have the best chance to grow well and produce a good yield.');
+            means.push('Keep monitoring to maintain this healthy condition.');
+        }
+
+        if ((avgs.N || 999) < 30) means.push('Low nitrogen can slow plant growth and reduce grain production.');
+        if ((avgs.humidity || 99) < 35 && trends.moisture === 'decreasing')
+            means.push('Continued drying could cause plants to wilt and die if not watered.');
+
+        noticedList.innerHTML = noticed.map(t => `<li>${t}</li>`).join('');
+        meansList.innerHTML = means.map(t => `<li>${t}</li>`).join('');
+    }
+
+    viewToggle.addEventListener('change', (e) => {
+        const isExpert = e.target.checked;
+        expertView.style.display = isExpert ? 'block' : 'none';
+        focusViewEl.style.display = isExpert ? 'none' : (window._lastAnalyzeResult ? 'block' : 'none');
+        focusEmptyEl.style.display = isExpert ? 'none' : (window._lastAnalyzeResult ? 'none' : 'block');
+        expertLabel.classList.toggle('active', isExpert);
+        farmerLabel.classList.toggle('active', !isExpert);
     });
 
     // --- Sync situation: upload section <-> results bar; apply layout on change ---
@@ -739,5 +946,96 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // -----------------------------------------------------------------------
+    // restoreFromCache() — reload last result from localStorage on page refresh
+    // -----------------------------------------------------------------------
+    function restoreFromCache() {
+        let cached;
+        try { cached = JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (e) { return; }
+        if (!cached) return;
+
+        window._lastAnalyzeResult = cached;
+
+        emptyState.style.display = 'none';
+        resultsContainer.style.display = 'block';
+
+        const resultsSowSow = document.getElementById('sowStatusResults-sow');
+        if (resultsSowSow) resultsSowSow.checked = true;
+        const uploadSowOption = document.getElementById('upload-sow-option');
+        if (uploadSowOption) uploadSowOption.style.display = 'none';
+        updateChoiceBarSummary();
+        expandChoiceBar();
+        applyChoiceLayout(cached);
+
+        document.getElementById('rec-crop-name').innerText =
+            cached.predicted_crop.charAt(0).toUpperCase() + cached.predicted_crop.slice(1);
+        document.getElementById('rec-planting-window').innerText = cached.planting_window;
+        document.getElementById('rec-yield-score').innerText = cached.historical_yield_score;
+
+        const scoreCircle = document.querySelector('.score-circle');
+        if (scoreCircle) {
+            if (cached.historical_yield_score > 80) scoreCircle.style.borderColor = '#3fb950';
+            else if (cached.historical_yield_score > 50) scoreCircle.style.borderColor = '#d29922';
+            else scoreCircle.style.borderColor = '#f85149';
+        }
+
+        const len = cached.time_series_data.N.length;
+        document.getElementById('val-n').innerHTML = `${cached.time_series_data.N[len - 1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">mg/kg</span>`;
+        document.getElementById('val-p').innerHTML = `${cached.time_series_data.P[len - 1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">mg/kg</span>`;
+        document.getElementById('val-k').innerHTML = `${cached.time_series_data.K[len - 1].toFixed(1)} <span class="unit" style="font-size: 0.6em;">mg/kg</span>`;
+        document.getElementById('val-temp').innerHTML =
+            `${cached.time_series_data.temperature[len - 1].toFixed(1)} <span class="unit" style="font-size:0.6em">°C</span>`;
+        document.getElementById('val-moisture').innerHTML =
+            `${cached.time_series_data.humidity[len - 1].toFixed(1)} <span class="unit" style="font-size:0.6em">%</span>`;
+
+        setTrendIcon('trend-n', cached.trends.nitrogen);
+        setTrendIcon('trend-temp', cached.trends.temperature);
+        setTrendIcon('trend-moisture', cached.trends.moisture);
+
+        alertsContainer.innerHTML = '';
+        if (cached.active_alerts && cached.active_alerts.length > 0) {
+            cached.active_alerts.forEach(alertText => {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert-card';
+                let icon = '⚠️';
+                if (alertText.includes('CRITICAL')) { alertDiv.classList.add('critical'); icon = '🚨'; }
+                else if (alertText.includes('WARNING') || alertText.includes('ACTION')) { alertDiv.classList.add('warning'); icon = '⚠️'; }
+                else { alertDiv.classList.add('success'); icon = '✅'; }
+                alertDiv.innerHTML = `
+                    <div class="alert-icon">${icon}</div>
+                    <div class="alert-content">
+                        <h3 style="margin-top:0;margin-bottom:0.5rem;font-size:1rem">${alertText.split(':')[0]}</h3>
+                        <p style="margin:0;color:#c9d1d9">${alertText.substring(alertText.indexOf(':') + 1)}</p>
+                    </div>`;
+                alertsContainer.appendChild(alertDiv);
+            });
+        } else {
+            alertsContainer.innerHTML = `<div class="alert-card success"><div class="alert-icon">✅</div><div class="alert-content"><h3 style="margin-top:0;margin-bottom:0.5rem;font-size:1rem">All Good!</h3><p style="margin:0;color:#c9d1d9">No critical thresholds breached.</p></div></div>`;
+        }
+
+        updateCharts(cached.time_series_data);
+
+        const labels = cached.crop_labels || window._cropLabels;
+        if (labels && labels.length) populateCropDropdowns(labels);
+
+        renderFocusView(cached);
+        const isExpert = document.getElementById('viewToggle').checked;
+        if (!isExpert) {
+            focusViewEl.style.display = 'block';
+            focusEmptyEl.style.display = 'none';
+        }
+    }
+
+
+    window.clearSoilSenseCache = function () {
+        try { localStorage.removeItem(CACHE_KEY); } catch (e) { }
+        location.reload();
+    };
+
+
+
+    // Restore last session on every page load
+    restoreFromCache();
 
 });

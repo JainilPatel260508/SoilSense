@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SoilSense - Agricultural Intelligence</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Google Fonts -->
+    <!-- Fonts: preconnect for speed, display=swap prevents invisible text -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500&display=swap"
         rel="stylesheet">
@@ -20,11 +22,13 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="logo">
-                <h2><i class="fa-solid fa-leaf" style="color: #4ade80; margin-right: 8px;"></i>SoilSense</h2>
+                <h2 onclick="clearSoilSenseCache()" style="cursor: pointer;"><i class="fa-solid fa-leaf"
+                        style="color: #4ade80; margin-right: 8px;"></i>SoilSense</h2>
             </div>
             <nav>
                 <ul>
-                    <li class="active"><a href="#"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+                    <li class="active"><a href="#" onclick="clearSoilSenseCache(); return false;"><i
+                                class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
                     <!-- <li><a href="#"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
                     <li><a href="#"><i class="fa-solid fa-gear"></i> Settings</a></li> -->
                 </ul>
@@ -145,6 +149,50 @@
                     <!-- Dynamic Alerts will be injected here -->
                 </section>
 
+                <!-- ===== FOCUS VIEW (Farmer-Friendly) ===== -->
+                <div id="focusView" style="display:none;">
+
+                    <!-- Section 1: Your Farm Today -->
+                    <div class="fv-section">
+                        <h2 class="fv-section-title"><span class="fv-section-icon">🌱</span> Your Farm Today</h2>
+                        <div class="fv-status-grid" id="fv-status-grid">
+                            <!-- Populated by renderFocusView() -->
+                        </div>
+                    </div>
+
+                    <!-- Section 2: What You Should Do Now -->
+                    <div class="fv-section">
+                        <h2 class="fv-section-title"><span class="fv-section-icon">✅</span> What You Should Do Now</h2>
+                        <div id="fv-actions-list">
+                            <!-- Populated by renderFocusView() -->
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Why We Are Saying This -->
+                    <div class="fv-section" id="fv-reasoning-section">
+                        <h2 class="fv-section-title"><span class="fv-section-icon">💡</span> Why We Are Saying This</h2>
+                        <div class="fv-reasoning card">
+                            <div class="fv-reasoning-col">
+                                <p class="fv-reasoning-label">We noticed:</p>
+                                <ul id="fv-noticed-list" class="fv-bullet-list"></ul>
+                            </div>
+                            <div class="fv-reasoning-col">
+                                <p class="fv-reasoning-label">This means:</p>
+                                <ul id="fv-means-list" class="fv-bullet-list"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Focus View empty state (shown before any upload in Focus View) -->
+                <div id="focusView-empty" style="display:none; text-align:center; padding:4rem 2rem; margin-top:2rem;">
+                    <div style="font-size:4rem; margin-bottom:1rem;">🌾</div>
+                    <h3 style="color:#8b949e; font-family:'Outfit',sans-serif;">Upload Your Soil Data</h3>
+                    <p style="color:#8b949e; max-width:380px; margin:0.75rem auto 0;">Upload a CSV file of your sensor
+                        readings to get simple, clear advice for your farm.</p>
+                </div>
+
                 <!-- Detailed Metrics & Charts -->
                 <div id="expertView" class="expert-view">
 
@@ -237,17 +285,24 @@
                         <div class="card metric-card">
                             <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Average N</h3>
                             <div class="metric-value-row">
-                                <p class="value" id="val-n">--</p>
+                                <p class="value" id="val-n">-- <span class="unit" style="font-size: 0.6em;">mg/kg</span>
+                                </p>
                                 <span class="trend-icon" id="trend-n"><i class="fa-solid fa-minus"></i></span>
                             </div>
                         </div>
                         <div class="card metric-card">
                             <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Average P</h3>
-                            <p class="value" id="val-p">--</p>
+                            <div class="metric-value-row">
+                                <p class="value" id="val-p">-- <span class="unit" style="font-size: 0.6em;">mg/kg</span>
+                                </p>
+                            </div>
                         </div>
                         <div class="card metric-card">
                             <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Average K</h3>
-                            <p class="value" id="val-k">--</p>
+                            <div class="metric-value-row">
+                                <p class="value" id="val-k">-- <span class="unit" style="font-size: 0.6em;">mg/kg</span>
+                                </p>
+                            </div>
                         </div>
                         <div class="card metric-card">
                             <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #8b949e;">Avg Temp</h3>
@@ -289,13 +344,15 @@
                                     <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-cloud-sun-rain"
                                             style="margin-right: 8px;"></i> Climate: Temp & Rainfall</h3>
                                     <div class="canvas-wrapper" style="position: relative; height: 260px; width: 100%;">
-                                        <canvas id="climateChart"></canvas></div>
+                                        <canvas id="climateChart"></canvas>
+                                    </div>
                                 </div>
                                 <div class="chart-container card" style="height: 320px;">
                                     <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-flask"
                                             style="margin-right: 8px;"></i> Soil: pH & Humidity</h3>
                                     <div class="canvas-wrapper" style="position: relative; height: 260px; width: 100%;">
-                                        <canvas id="soilParamChart"></canvas></div>
+                                        <canvas id="soilParamChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
