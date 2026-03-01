@@ -57,3 +57,7 @@ yarn-error.log
 # Logs and databases
 *.log
 *.sqlite
+
+# Environment variables (secrets — never commit)
+.env
+backend/.env

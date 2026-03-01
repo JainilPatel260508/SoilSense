@@ -1,0 +1,23 @@
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: soilsense-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: soilsense_admin
+      MONGO_INITDB_ROOT_PASSWORD: soilsense_pass
+      MONGO_INITDB_DATABASE: soilsense
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  mongo_data:
+    driver: local

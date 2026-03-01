@@ -4,3 +4,5 @@ scikit-learn
 flask
 flask-cors
 joblib
+pymongo
+python-dotenv
