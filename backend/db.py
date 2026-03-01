@@ -14,8 +14,8 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ConfigurationError
 
-# Load .env from the same directory as this file
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+# Load .env from the root of the project
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
 _client: MongoClient | None = None
 _db = None
