@@ -51,10 +51,10 @@ Sensor Data (CSV) -> Data Preprocessing -> ML Model Prediction -> Backend Proces
 ## 5. Dataset Selected
 
 ### Dataset Name
-Standard Crop Recommendation Dataset (e.g., Kaggle)
+Crop Recommendation Dataset(Kaggle)
 
 ### Source
-Kaggle / Open Agricultural Datasets
+Kaggle
 
 ### Data Type
 Tabular data containing N, P, K, temperature, humidity, ph, rainfall, and target crop labels.
